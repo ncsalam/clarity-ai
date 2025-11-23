@@ -11,7 +11,7 @@ services:
       - APP_POSTGRES_USER=${POSTGRES_USER}
       - APP_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - postgresql_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql
@@ -35,51 +35,52 @@ services:
     networks:
       - app_network
 
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: clarity-backend
-  #   restart: always
-  #   depends_on:
-  #     - postgresql
-  #     - supertokens
-  #   ports:
-  #     - "5000:5000"
-  #   environment:
-  #     - SUPERTOKENS_CONNECTION_URI=http://supertokens:3567
-  #     - SUPERTOKENS_API_KEY=${SUPERTOKENS_API_KEY}
-  #     - API_DOMAIN=http://localhost:5000
-  #     - WEBSITE_DOMAIN=http://localhost:3000
-  #     - POSTGRES_USER=${POSTGRES_USER}
-  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  #     - POSTGRES_HOST=postgresql
-  #     - POSTGRES_PORT=5432
-  #     - POSTGRES_DB=${POSTGRES_DB}
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #   volumes:
-  #     - ./backend:/app
-  #   networks:
-  #     - app_network
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: clarity-backend
+    restart: always
+    depends_on:
+      - postgresql
+      - supertokens
+    ports:
+      - "5000:5000"
+    environment:
+      - SUPERTOKENS_CONNECTION_URI=http://supertokens:3567
+      - SUPERTOKENS_API_KEY=${SUPERTOKENS_API_KEY}
+      - API_DOMAIN=http://localhost:5000
+      - WEBSITE_DOMAIN=http://localhost:5173
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./backend:/app
+    networks:
+      - app_network
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: clarity-frontend
-  #   restart: always
-  #   depends_on:
-  #     - backend
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - VITE_API_DOMAIN=http://localhost:5000
-  #     - VITE_WEBSITE_DOMAIN=http://localhost:3000
-  #     - VITE_SESSION_SCOPE=localhost
-  #     - VITE_APP_NAME=Clarity AI
-  #     - BACKEND_HOST=backend:5000
-  #   networks:
-  #     - app_network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: clarity-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:4173"
+    environment:
+      - VITE_API_DOMAIN=http://localhost:5000
+      - VITE_WEBSITE_DOMAIN=http://localhost:5173
+      - VITE_SESSION_SCOPE=localhost
+      - VITE_APP_NAME=Clarity AI
+      - VITE_SUPERTOKENS_API_DOMAIN=http://localhost:5000
+      - BACKEND_HOST=http://localhost:5000
+    networks:
+      - app_network
 
 networks:
   app_network:

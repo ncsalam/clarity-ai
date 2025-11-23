@@ -117,7 +117,7 @@ def create_app():
         supertokens_headers = get_all_cors_headers() if not app.config.get('TESTING') else []
     except:
         supertokens_headers = []
-    
+
     CORS(
         app,
         origins=cors_origins,
