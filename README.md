@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/1080501217.svg)](https://doi.org/10.5281/zenodo.17547339)  [![CI Pipeline](https://github.com/Aum3010/ncsu-csc510-2025-s1-g3-clarity-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Aum3010/ncsu-csc510-2025-s1-g3-clarity-ai/actions/workflows/ci.yml)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
+[![DOI](https://zenodo.org/badge/1080501217.svg)](https://doi.org/10.5281/zenodo.17547339)  [![CI Pipeline](https://github.com/Aum3010/ncsu-csc510-2025-s1-g3-clarity-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Aum3010/ncsu-csc510-2025-s1-g3-clarity-ai/actions/workflows/ci.yml)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
 # 💡 Clarity AI: Intelligent Requirements Analysis
@@ -33,10 +33,15 @@ Clarity AI is a microservices application running via Docker Compose.
 - **Contradiction Identification**: Identifies pairs of contradicting requirements and flags it for the user.
 
 ## Made by NCSU CSC-510 Section 001 Group 3
-- Aum Pandya 
+- Aum Pandya
 - Pranav Bhagwat
-- Tayo Olukotun 
+- Tayo Olukotun
 
+## Updated by NCSU CSC-510 Section 001 Group 23
+- Elliot Rezek
+- Nathan Chacko
+- Noah Salam
+- William Jackson
 
 # Repo Information
 
@@ -55,17 +60,22 @@ The easiest way to run the application is using Docker Compose:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Aum3010/ncsu-csc510-2025-s1-g3-clarity-ai.git
-cd ncsu-csc510-2025-s1-g3-clarity-ai
+git https://github.com/ncsalam/clarity-ai.git
+cd clarity-ai
 
-# Copy environment files
+# Copy environment file
 cp .env.example .env
-cp frontend/.env.example frontend/.env
 
-# Edit .env files with your configuration (see Environment Variables section below)
+# Edit .env file with your configuration (see Environment Variables section below)
+# This isn't necessary right away to get the app to start.
 
 # Start all services (backend, frontend, database, SuperTokens)
 docker compose up
+
+```
+Finally, you'll have to initialize the database. In a separate terminal, run:
+```bash
+docker compose exec backend flask db upgrade
 ```
 
 The application will be available at:
@@ -76,6 +86,8 @@ The application will be available at:
 ---
 
 # Manual Setup
+
+**NOTE:** manual setup instructions have not been updated and may not be functional.
 
 Refer [INSTALL.md](docs/INSTALL.md) for details.
 
@@ -174,7 +186,7 @@ If your CI pipeline fails, follow these steps:
    npm run lint    # Check linting errors
    npm run test    # Run tests
    npm run build   # Verify build
-   
+
    # Backend
    cd backend
    pytest -v       # Run tests with verbose output
@@ -366,7 +378,7 @@ For detailed setup instructions, see [.github/CI_SETUP.md](.github/CI_SETUP.md).
 
 For more details about the workflow, see the workflow file comments.
 
-# Contributing 
+# Contributing
 
 Refer [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 
@@ -377,4 +389,4 @@ Refer [docs/CODE_OF_CONDUCT.md](docs/CODE_OF_CONDUCT.md)
 # License
 
 This project is [MIT-licensed](LICENSE).
-It was created as a part of the CSC-510 coursework at North Carolina State University, Raleigh, USA. 
+It was created as a part of the CSC-510 coursework at North Carolina State University, Raleigh, USA.
