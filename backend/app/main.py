@@ -57,6 +57,7 @@ def create_app():
 
     # Set Flask configuration
     app.config["SQLALCHEMY_DATABASE_URI"] = get_database_uri()
+    app.config["SQLALCHEMY_ECHO"] = True # super helpful debug logging
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Configure database connection pooling for optimal performance

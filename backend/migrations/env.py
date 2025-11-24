@@ -46,8 +46,8 @@ def run_migrations_offline():
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url, 
-        target_metadata=get_metadata(), 
+        url=url,
+        target_metadata=get_metadata(),
         literal_binds=True,
         include_object=include_object,
         version_table_schema='public'
@@ -71,14 +71,16 @@ def run_migrations_online():
         conf_args["process_revision_directives"] = process_revision_directives
 
     conf_args['include_object'] = include_object
-    
+
     conf_args['version_table_schema'] = 'public'
-    
+
     connectable = get_engine()
 
     with connectable.connect() as connection:
-        
-        connection.exec_driver_sql("SET search_path TO public")
+
+        # for some reason, this line will completely brick all attempts at database migration.
+        # this took an ungodly number of hours to figure out. KMS
+        # connection.exec_driver_sql("SET search_path TO public")
 
         context.configure(
             connection=connection,
