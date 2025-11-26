@@ -7,6 +7,7 @@ import Notification from '../components/Notification.jsx';
 // --- 1. IMPORT YOUR MODALS ---
 import EditRequirementModal from '../components/EditRequirementModal.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import RequirementsGraph from '../components/RequirementsGraph.jsx';
 
 const RequirementsDashboard = ({ refreshSignal, onTriggerRefresh }) => {
   const [requirements, setRequirements] = useState([]);
@@ -367,6 +368,13 @@ const RequirementsDashboard = ({ refreshSignal, onTriggerRefresh }) => {
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ADD THE GRAPH HERE */}
+            {requirements.length > 0 && (
+              <div className="mb-6">
+                <RequirementsGraph requirements={requirements} />
               </div>
             )}
 
