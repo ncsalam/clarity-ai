@@ -9,10 +9,11 @@ const AmbiguityDetectionPanel = ({
   onClarificationSubmit, 
   onAnalysisComplete,
   autoAnalyze = false,
-  enableRealTime = false
+  enableRealTime = false,
+  batchAnalysis = null
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
+  const [analysis, setAnalysis] = useState(batchAnalysis);
   const [error, setError] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState(null);
@@ -24,6 +25,13 @@ const AmbiguityDetectionPanel = ({
       handleAnalyze();
     }
   }, [autoAnalyze]);
+
+  // Update analysis if batchAnalysis changes
+  useEffect(() => {
+    if (batchAnalysis) {
+      setAnalysis(batchAnalysis);
+    }
+  }, [batchAnalysis]);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -180,7 +188,7 @@ const AmbiguityDetectionPanel = ({
           {(showDetails || enableRealTime) && totalTerms > 0 && (
             <div className="space-y-3">
               <AmbiguityHighlighter
-                text={requirement.description}
+                text={analysis.original_text}
                 ambiguousTerms={analysis.terms || []}
                 onTermClick={handleTermClick}
               />
