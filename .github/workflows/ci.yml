@@ -192,7 +192,8 @@ jobs:
       POSTGRES_DB: ${{ secrets.CI_APP_POSTGRES_DB || 'test_clarity_ai' }}
       PYTHONPATH: ${{ github.workspace }}/backend
       SUPERTOKENS_CONNECTION_URI: http://localhost:3567
-      SUPERTOKENS_API_KEY: ${{ secrets.CI_SUPERTOKENS_API_KEY || 'test_api_key' }}
+      # Use a long placeholder fallback only if secret not set (SuperTokens requires >=20 chars)
+      SUPERTOKENS_API_KEY: ${{ secrets.CI_SUPERTOKENS_API_KEY || 'test_ci_api_key_placeholder_1234567890' }}
       APP_NAME: ${{ vars.CI_APP_NAME || 'Clarity AI Test' }}
       API_DOMAIN: ${{ vars.CI_API_DOMAIN || 'http://localhost:5000' }}
       WEBSITE_DOMAIN: ${{ vars.CI_WEBSITE_DOMAIN || 'http://localhost:5173' }}
@@ -223,7 +224,8 @@ jobs:
         image: registry.supertokens.io/supertokens/supertokens-postgresql:latest
         env:
           POSTGRESQL_CONNECTION_URI: postgresql://${{ secrets.CI_SUPERTOKENS_POSTGRES_USER || 'supertokens_user' }}:${{ secrets.CI_SUPERTOKENS_POSTGRES_PASSWORD || 'supertokens_password' }}@postgres:5432/${{ secrets.CI_SUPERTOKENS_POSTGRES_DB || 'supertokens' }}
-          API_KEYS: ${{ secrets.CI_SUPERTOKENS_API_KEY || 'test_api_key' }}
+          # SuperTokens requires API_KEYS length >= 20; set secret CI_SUPERTOKENS_API_KEY or use long placeholder
+          API_KEYS: ${{ secrets.CI_SUPERTOKENS_API_KEY || 'test_ci_api_key_placeholder_1234567890' }}
         ports:
           - 3567:3567
         options: >-
