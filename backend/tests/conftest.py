@@ -64,15 +64,6 @@ def app():
             return wrapper
         return decorator
     
-    # Mock RAG service functions
-    def mock_process_and_store_document(document):
-        """Mock RAG processing to avoid PostgreSQL dependency"""
-        pass
-    
-    def mock_delete_document_from_rag(document_id):
-        """Mock RAG deletion to avoid PostgreSQL dependency"""
-        pass
-    
     # Mock SuperTokens before importing create_app
     with patch('app.auth_service.init_supertokens'), \
          patch('app.auth_service.init_roles_and_permissions'), \
@@ -81,9 +72,7 @@ def app():
          patch('supertokens_python.get_all_cors_headers', return_value=[]), \
          patch('app.database_optimization.configure_connection_pooling'), \
          patch('app.database_optimization.query_monitor', mock_query_monitor), \
-         patch('app.main.get_database_uri', return_value="sqlite:///:memory:"), \
-         patch('app.routes.process_and_store_document', mock_process_and_store_document), \
-         patch('app.routes.delete_document_from_rag', mock_delete_document_from_rag):
+         patch('app.main.get_database_uri', return_value="sqlite:///:memory:"):
         
         from app.main import create_app, db
         
@@ -122,6 +111,13 @@ def app():
             yield app
             db.session.remove()
             db.drop_all()
+
+
+# Ensure every test runs inside an application context
+@pytest.fixture(autouse=True)
+def _global_app_context(app):
+    with app.app_context():
+        yield
 
 
 @pytest.fixture(scope="function")

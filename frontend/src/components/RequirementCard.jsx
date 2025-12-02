@@ -9,7 +9,8 @@ const RequirementCard = ({
   isConflicting = false,
   isSelected = false,   
   onEdit,
-  onDelete
+  onDelete,
+  batchAnalysis
 }) => {
   const { req_id, title, description, status, priority, source_document_filename, tags } = requirement;
   const [isEditing, setIsEditing] = useState(false);
@@ -154,27 +155,29 @@ const RequirementCard = ({
         onClarificationSubmit={handleClarificationSubmit}
         autoAnalyze={shouldAnalyze}
         enableRealTime={enableRealTimeAnalysis && isEditing}
+        batchAnalysis={batchAnalysis}
       />
     </div>
   );
 };
 
 RequirementCard.propTypes = {
-    requirement: PropTypes.shape({
-        id: PropTypes.number.isRequired,
-        req_id: PropTypes.string.isRequired,
-        title: PropTypes.string.isRequired,
-        description: PropTypes.string,
-        status: PropTypes.string,
-        priority: PropTypes.string,
-        source_document_filename: PropTypes.string,
-        tags: PropTypes.arrayOf(PropTypes.object),
-    }).isRequired,
-    enableRealTimeAnalysis: PropTypes.bool,
-    isConflicting: PropTypes.bool,
-    isSelected: PropTypes.bool,
-    onEdit: PropTypes.func.isRequired,
-    onDelete: PropTypes.func.isRequired,
+  requirement: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    req_id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    status: PropTypes.string,
+    priority: PropTypes.string,
+    source_document_filename: PropTypes.string,
+    tags: PropTypes.arrayOf(PropTypes.object),
+  }).isRequired,
+  enableRealTimeAnalysis: PropTypes.bool,
+  isConflicting: PropTypes.bool,
+  isSelected: PropTypes.bool,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  batchAnalysis: PropTypes.object,
 };
 
 RequirementCard.defaultProps = {

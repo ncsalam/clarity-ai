@@ -89,8 +89,20 @@ def mock_langchain(app):
         mock_final_chain = MagicMock()
         mock_final_chain.invoke = MagicMock()
         
-        # This simulates the entire chain of 4 | operations
-        MockRunnablePassthrough.return_value.__or__.return_value.__or__.return_value.__or__.return_value = mock_final_chain
+        # Create intermediate chain mocks that properly chain together
+        mock_chain_3 = MagicMock()
+        mock_chain_3.__or__ = MagicMock(return_value=mock_final_chain)
+        
+        mock_chain_2 = MagicMock()
+        mock_chain_2.__or__ = MagicMock(return_value=mock_chain_3)
+        
+        mock_chain_1 = MagicMock()
+        mock_chain_1.__or__ = MagicMock(return_value=mock_chain_2)
+        
+        # RunnablePassthrough() | {...} returns mock_chain_1
+        mock_runnable_instance = MagicMock()
+        mock_runnable_instance.__or__ = MagicMock(return_value=mock_chain_1)
+        MockRunnablePassthrough.return_value = mock_runnable_instance
 
         yield {
             "PGVector": MockPGVector,
@@ -126,12 +138,12 @@ def sample_requirements():
     req1 = MagicMock(spec=Requirement)
     req1.id = 1
     req1.owner_id = "user_123"
-    req1.tags = []
+    req1.tags = MagicMock()  # Make tags a MagicMock so clear() can be asserted
     
     req2 = MagicMock(spec=Requirement)
     req2.id = 2
     req2.owner_id = "user_123"
-    req2.tags = []
+    req2.tags = MagicMock()  # Make tags a MagicMock so clear() can be asserted
     
     return [req1, req2]
 
@@ -290,12 +302,13 @@ class TestRagService:
             call_args = mock_langchain['vector_store'].add_documents.call_args[0][0]
             assert len(call_args) == 3
 
-    def test_process_and_store_document_thread_creation_error(self, mock_langchain, mock_threading, capfd):
+    def test_process_and_store_document_thread_creation_error(self, mock_langchain, capfd):
         """Test handling of thread creation failure."""
         doc = Document(id=1, content="Test", owner_id="user_123")
         
         with patch('app.rag_service.current_app') as mock_app:
-            mock_app.app_context.side_effect = RuntimeError("Context error")
+            # Make app_context() callable but raise when called
+            mock_app.app_context = MagicMock(side_effect=RuntimeError("Context error"))
             
             # Should not raise, just log error
             process_and_store_document(doc)
@@ -493,7 +506,7 @@ class TestRagService:
     def test_generate_project_summary_returns_pydantic_object(self, mock_langchain):
         """Test project summary returns correct type."""
         mock_chain = mock_langchain['final_chain']
-        valid_summary = '{"summary": "Test summary", "action_items": [], "decisions": []}'
+        valid_summary = '{"summary": "Test summary", "key_decisions": [], "open_questions": [], "action_items": []}'
         mock_chain.invoke.return_value = valid_summary
         
         result = generate_project_summary(owner_id="user_123")
@@ -669,7 +682,7 @@ class TestRagService:
     def test_generate_project_summary_scoping(self, mock_langchain):
         """Test project summary respects owner_id scoping."""
         mock_chain = mock_langchain['final_chain']
-        mock_chain.invoke.return_value = '{"summary": "Test", "action_items": [], "decisions": []}'
+        mock_chain.invoke.return_value = '{"summary": "Test", "key_decisions": [], "open_questions": [], "action_items": []}'
         
         store = mock_langchain['vector_store']
         
@@ -683,7 +696,7 @@ class TestRagService:
     def test_generate_project_summary_public_scoping(self, mock_langchain):
         """Test project summary for public documents."""
         mock_chain = mock_langchain['final_chain']
-        mock_chain.invoke.return_value = '{"summary": "Test", "action_items": [], "decisions": []}'
+        mock_chain.invoke.return_value = '{"summary": "Test", "key_decisions": [], "open_questions": [], "action_items": []}'
         
         store = mock_langchain['vector_store']
         

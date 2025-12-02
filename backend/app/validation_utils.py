@@ -315,7 +315,7 @@ class RateLimiter:
         """Initialize rate limiter"""
         self._requests: Dict[str, List[float]] = {}
     
-    def check_rate_limit(self, user_id: str, max_requests: int = 100, 
+    def check_rate_limit(self, user_id: str, max_requests: int = 500, 
                         window_seconds: int = 3600) -> bool:
         """
         Check if user has exceeded rate limit.
@@ -350,7 +350,7 @@ class RateLimiter:
         
         return True
     
-    def get_remaining_requests(self, user_id: str, max_requests: int = 100,
+    def get_remaining_requests(self, user_id: str, max_requests: int = 500,
                               window_seconds: int = 3600) -> int:
         """
         Get number of remaining requests for user.

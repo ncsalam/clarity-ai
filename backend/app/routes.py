@@ -802,7 +802,7 @@ def analyze_ambiguity():
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."
@@ -926,7 +926,7 @@ def analyze_requirement_ambiguity(requirement_id):
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."
@@ -1004,8 +1004,8 @@ def analyze_batch_ambiguity():
         from flask import g
         current_user_id = g.user_id
         
-        # Check rate limit (stricter for batch operations)
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=20, window_seconds=3600):
+        # Check rate limit
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many batch requests. Please try again later."
@@ -1089,7 +1089,7 @@ def submit_clarification():
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."
@@ -1621,7 +1621,7 @@ def add_lexicon_term():
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."
