@@ -9,7 +9,8 @@ const RequirementCard = ({
   isConflicting = false,
   isSelected = false,   
   onEdit,
-  onDelete
+  onDelete,
+  onGenerateEdgeCases
 }) => {
   const { req_id, title, description, status, priority, source_document_filename, tags } = requirement;
   const [isEditing, setIsEditing] = useState(false);
@@ -67,33 +68,41 @@ const RequirementCard = ({
     }
   };
 
+    const handleGenerateEdgeCases = () => {
+    if (onGenerateEdgeCases) {
+      onGenerateEdgeCases(requirement);
+    } else {
+      console.warn('onGenerateEdgeCases handler not provided');
+    }
+  };
+
   const cardClasses = `
     bg-white rounded-xl shadow-lg p-6 transition-all duration-300 
     ${isSelected ? 'ring-4 ring-indigo-400 ring-offset-2' : ''}
     ${isConflicting 
         ? 'border-l-4 border-red-500 bg-red-50 hover:shadow-xl' 
         : 'border-l-4 border-transparent hover:shadow-md'}
-  `;
+  `;  
 
-  return (
+    return (
     <div className={cardClasses}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center space-x-3 min-w-0">
-            {isConflicting && (
-                <span 
-                    className="w-5 h-5 text-red-600 flex-shrink-0 animate-pulse" 
-                    role="img" 
-                    aria-label="warning"
-                    title="This requirement conflicts with another." 
-                >
-                  ⚠️
-                </span>
-            )}
-            
-            <h3 className={`text-xl font-semibold leading-tight ${isConflicting ? 'text-red-700' : 'text-gray-900'} truncate`}>
-                {title}
-            </h3>
-            <span className="text-gray-500 font-mono text-sm ml-2">{req_id}</span>
+          {isConflicting && (
+            <span 
+              className="w-5 h-5 text-red-600 flex-shrink-0 animate-pulse" 
+              role="img" 
+              aria-label="warning"
+              title="This requirement conflicts with another." 
+            >
+              ⚠️
+            </span>
+          )}
+          
+          <h3 className={`text-xl font-semibold leading-tight ${isConflicting ? 'text-red-700' : 'text-gray-900'} truncate`}>
+            {title}
+          </h3>
+          <span className="text-gray-500 font-mono text-sm ml-2">{req_id}</span>
         </div>
         
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -106,21 +115,21 @@ const RequirementCard = ({
               {isEditing ? 'Cancel' : 'Edit'}
             </button>
           )}
-           {/* --- THIS IS THE FIX --- */}
-           <button 
-                onClick={() => onEdit(requirement)} 
-                className="text-gray-500 hover:text-indigo-600 p-1 rounded-full transition-colors"
-                title="Edit Requirement"
-            >
-                <span role="img" aria-label="edit" style={{fontSize: '1.25rem'}}>✏️</span>
-            </button>
-            <button 
-                onClick={() => onDelete(requirement)} 
-                className="text-gray-500 hover:text-red-600 p-1 rounded-full transition-colors"
-                title="Delete Requirement"
-            >
-                <span role="img" aria-label="delete" style={{fontSize: '1.25rem'}}>🗑️</span>
-            </button>
+          {/* --- THIS IS THE FIX --- */}
+          <button 
+            onClick={() => onEdit(requirement)} 
+            className="text-gray-500 hover:text-indigo-600 p-1 rounded-full transition-colors"
+            title="Edit Requirement"
+          >
+            <span role="img" aria-label="edit" style={{fontSize: '1.25rem'}}>✏️</span>
+          </button>
+          <button 
+            onClick={() => onDelete(requirement)} 
+            className="text-gray-500 hover:text-red-600 p-1 rounded-full transition-colors"
+            title="Delete Requirement"
+          >
+            <span role="img" aria-label="delete" style={{fontSize: '1.25rem'}}>🗑️</span>
+          </button>
         </div>
       </div>
 
@@ -155,9 +164,20 @@ const RequirementCard = ({
         autoAnalyze={shouldAnalyze}
         enableRealTime={enableRealTimeAnalysis && isEditing}
       />
+
+      {/* Generate Edge Cases button under ambiguity detection */}
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={handleGenerateEdgeCases}
+          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+        >
+          Generate Edge Cases
+        </button>
+      </div>
     </div>
   );
 };
+
 
 RequirementCard.propTypes = {
     requirement: PropTypes.shape({
@@ -175,6 +195,7 @@ RequirementCard.propTypes = {
     isSelected: PropTypes.bool,
     onEdit: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
+    onGenerateEdgeCases: PropTypes.func,
 };
 
 RequirementCard.defaultProps = {
@@ -183,6 +204,7 @@ RequirementCard.defaultProps = {
     isSelected: false,
     onEdit: () => console.log('Edit handler not provided'),
     onDelete: () => console.log('Delete handler not provided'),
+    onGenerateEdgeCases: () => console.log('Generate Edge Cases handler not provided'),
 };
 
 export default RequirementCard;
