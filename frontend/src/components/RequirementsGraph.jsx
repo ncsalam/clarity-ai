@@ -19,29 +19,43 @@ const RequirementsGraph = ({ requirements }) => {
     const rect = svgRef.current.getBoundingClientRect();
     const width = rect.width || 928;
     const height = rect.height || 600;
+    const centerX = width / 2;
+    const centerY = height / 2;
 
     const nodes = [];
     const links = [];
     const nodeMap = new Map();
     const tagToRequirements = new Map();
+    const sourceToRequirements = new Map(); // filename -> [reqNodeId]
 
     // ---------------------------
     // Build Requirement Nodes
     // ---------------------------
     requirements.forEach(req => {
+      const reqNodeId = `req:${req.req_id}`;
+      const sourceFilename = req.source_document_filename ?? 'unknown-source';
+
       const reqNode = {
-        id: `req:${req.req_id}`,
+        id: reqNodeId,
         type: 'requirement',
         label: req.req_id,
         title: req.title,
-        fullData: req
+        fullData: req,
+        sourceDocument: sourceFilename
       };
       nodes.push(reqNode);
       nodeMap.set(reqNode.id, reqNode);
 
+      // populate source -> req mapping
+      if (!sourceToRequirements.has(sourceFilename)) {
+        sourceToRequirements.set(sourceFilename, []);
+      }
+      sourceToRequirements.get(sourceFilename).push(reqNodeId);
+
+      // tags map
       req.tags?.forEach(tag => {
         if (!tagToRequirements.has(tag.name)) tagToRequirements.set(tag.name, []);
-        tagToRequirements.get(tag.name).push(reqNode.id);
+        tagToRequirements.get(tag.name).push(reqNodeId);
       });
     });
 
@@ -77,36 +91,66 @@ const RequirementsGraph = ({ requirements }) => {
     });
 
     // ---------------------------
-    // Build Requirement–Requirement Links (shared tags)
+    // Build Requirement–Requirement Links (same source document)
     // ---------------------------
-    tagToRequirements.forEach((reqIds, tagName) => {
+    // Create links between all requirements that came from the same source filename
+    sourceToRequirements.forEach((reqIds, sourceFilename) => {
       for (let i = 0; i < reqIds.length; i++) {
         for (let j = i + 1; j < reqIds.length; j++) {
-          const exists = links.some(
-            l =>
-              (l.source === reqIds[i] && l.target === reqIds[j]) ||
-              (l.source === reqIds[j] && l.target === reqIds[i])
-          );
-          if (!exists) {
-            links.push({
-              source: reqIds[i],
-              target: reqIds[j],
-              type: 'shared-tag',
-              sharedTag: tagName
-            });
-          }
+          links.push({
+            source: reqIds[i],
+            target: reqIds[j],
+            type: 'same-source',
+            sourceDocument: sourceFilename
+          });
         }
       }
+    });
+
+    // ---------------------------
+    // Prepare source centers (for clustering)
+    // ---------------------------
+    const uniqueSources = Array.from(sourceToRequirements.keys());
+    const sourceCenters = new Map();
+    // Arrange centers around a circle (deterministic)
+    const clusterRadius = Math.min(width, height) * 0.28;
+    uniqueSources.forEach((source, idx) => {
+      const angle = (idx / Math.max(1, uniqueSources.length)) * Math.PI * 2;
+      const sx = centerX + Math.cos(angle) * clusterRadius;
+      const sy = centerY + Math.sin(angle) * clusterRadius;
+      sourceCenters.set(source, { x: sx, y: sy });
+    });
+
+    // Precompute deterministic color per source (uses same utility for stable colors)
+    const sourceColorMap = new Map();
+    uniqueSources.forEach(src => {
+      // use a prefix so that tags and sources don't collide color-wise in the cache
+      sourceColorMap.set(src, getTagColor(`source:${src}`));
     });
 
     // ---------------------------
     // D3 Simulation
     // ---------------------------
     const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.type === 'has-tag' ? 80 : 150))
-      .force('charge', d3.forceManyBody().strength(-300))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(d => d.type === 'requirement' ? 25 : 35));
+      .force('link', d3.forceLink(links).id(d => d.id).distance(d => (d.type === 'has-tag' ? 80 : 120)))
+      .force('charge', d3.forceManyBody().strength(-250))
+      // source clustering forces — pull requirement nodes toward their source center
+      .force('x', d3.forceX().x(d => {
+        if (d.type === 'requirement') {
+          const c = sourceCenters.get(d.sourceDocument);
+          return c ? c.x : centerX;
+        }
+        // tags are centered
+        return centerX;
+      }).strength(0.15))
+      .force('y', d3.forceY().y(d => {
+        if (d.type === 'requirement') {
+          const c = sourceCenters.get(d.sourceDocument);
+          return c ? c.y : centerY;
+        }
+        return centerY;
+      }).strength(0.15))
+      .force('collision', d3.forceCollide().radius(d => d.type === 'requirement' ? 28 : 36));
 
     simulationRef.current = simulation;
 
@@ -130,17 +174,23 @@ const RequirementsGraph = ({ requirements }) => {
     // Link Drawing
     // ---------------------------
     const link = g.append('g')
+      .attr('pointer-events', 'all')
       .selectAll('line')
       .data(links)
       .join('line')
-      .attr('stroke', d => d.type === 'has-tag' ? '#999' : '#4f46e5')
-      .attr('stroke-opacity', d => d.type === 'has-tag' ? 0.6 : 0.3)
-      .attr('stroke-width', d => d.type === 'has-tag' ? 2 : 1)
-      .attr('stroke-dasharray', d => d.type === 'shared-tag' ? '5,5' : '0');
+      .attr('stroke', d => {
+        if (d.type === 'has-tag') return '#999';
+        if (d.type === 'same-source') return sourceColorMap.get(d.sourceDocument) || '#0d9488';
+        return '#999';
+      })
+      .attr('stroke-opacity', d => d.type === 'has-tag' ? 0.6 : 0.45)
+      .attr('stroke-width', d => d.type === 'has-tag' ? 2 : 2)
+      .attr('stroke-dasharray', d => d.type === 'same-source' ? '5,5' : '0');
 
-    link.filter(d => d.type === 'shared-tag')
+    // Tooltip for same-source links
+    link.filter(d => d.type === 'same-source')
       .append('title')
-      .text(d => `Connected via: ${d.sharedTag}`);
+      .text(d => `Same source: ${d.sourceDocument}`);
 
     // ---------------------------
     // Node Drawing
@@ -156,7 +206,8 @@ const RequirementsGraph = ({ requirements }) => {
     node.append('circle')
       .attr('r', d => d.type === 'requirement' ? 8 : 10)
       .attr('fill', d => d.type === 'requirement' ? '#000000ff' : d.color)
-      .attr('stroke-width', d => selectedNode === d.id ? 4 : 2);
+      .attr('stroke-width', d => selectedNode === d.id ? 4 : 2)
+      .attr('stroke', '#000000aa');
 
     node.append('text')
       .attr('x', 12)
@@ -173,6 +224,47 @@ const RequirementsGraph = ({ requirements }) => {
       setSelectedNode(prev => (prev === d.id ? null : d.id))
     );
 
+    // ---------------------------
+    // Hover behavior for same-source dashed links (Feature 2)
+    // ---------------------------
+    // Helper to highlight all requirements for a given source filename
+    function highlightSource(sourceFilename) {
+      // which node ids belong to this source
+      const reqIds = new Set(sourceToRequirements.get(sourceFilename) || []);
+
+      // highlight matching nodes, dim others
+      node.select('circle')
+        .attr('opacity', n => (n.type === 'requirement' ? (reqIds.has(n.id) ? 1 : 0.25) : 0.25))
+        .attr('stroke', n => (n.type === 'requirement' && reqIds.has(n.id) ? sourceColorMap.get(sourceFilename) : '#000000aa'))
+        .attr('stroke-width', n => (n.type === 'requirement' && reqIds.has(n.id) ? 3 : 1));
+    }
+
+    function resetHighlight() {
+      node.select('circle')
+        .attr('opacity', 1)
+        .attr('stroke', '#000000aa')
+        .attr('stroke-width', d => (selectedNode === d.id ? 4 : 2));
+    }
+
+    // Add mouse events to same-source links
+    link
+      .on('mouseover', function (event, d) {
+        if (d.type === 'same-source') {
+          // dim links except this source's links
+          link.attr('stroke-opacity', l => (l.type === 'same-source' && l.sourceDocument === d.sourceDocument ? 0.9 : (l.type === 'has-tag' ? 0.15 : 0.08)));
+          // highlight nodes in the source
+          highlightSource(d.sourceDocument);
+        }
+      })
+      .on('mouseout', function (event, d) {
+        // restore opacities and node styles
+        link.attr('stroke-opacity', l => (l.type === 'has-tag' ? 0.6 : 0.45));
+        resetHighlight();
+      });
+
+    // ---------------------------
+    // Simulation tick
+    // ---------------------------
     simulation.on('tick', () => {
       link
         .attr('x1', d => d.source.x)
@@ -219,7 +311,7 @@ const RequirementsGraph = ({ requirements }) => {
   }
 
   // ---------------------------
-  // Render Graph + Legend
+  // Render Graph + Legend (including dashed-line legend item)
   // ---------------------------
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
@@ -242,8 +334,16 @@ const RequirementsGraph = ({ requirements }) => {
             })}
           </div>
 
+          {/* Legend: dashed-line meaning */}
+          <div className="flex items-center gap-2 mt-2">
+            <svg width="80" height="14" className="inline-block align-middle">
+              <line x1="0" y1="8" x2="70" y2="8" stroke="#0d9488" strokeWidth="3" strokeDasharray="5,5" strokeLinecap="round" />
+            </svg>
+            <span className="text-sm text-gray-700">Dashed line = same source document</span>
+          </div>
+
           <div className="text-gray-600 mt-2">
-            💡 Drag nodes to rearrange • Scroll to zoom • Hover for details • Click to highlight
+            💡 Drag nodes to rearrange • Scroll to zoom • Hover dashed lines to highlight source • Click nodes to select
           </div>
         </div>
       </div>
