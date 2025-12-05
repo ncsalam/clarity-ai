@@ -768,6 +768,42 @@ apiService.batchAnalyzeRequirements = async function (requirementIds) {
     throw new Error(error.message || "Failed to batch analyze requirements");
   }
 };
+/**
+ * Generate edge cases for a specific requirement
+ * @param {number} requirementId - Requirement ID
+ * @param {number} maxCases - Optional limit on number of edge cases
+ * @returns {Promise<Object>} Edge case results
+ */
+// NEW EDGE CASE METHOD
+apiService.generateEdgeCases = async function (requirementId, maxCases = 10) {
+  try {
+    if (!requirementId) {
+      throw new Error("Requirement ID is required");
+    }
+
+    const payload = {
+      max_cases: maxCases
+    };
+
+    // Uses your new backend route:
+    // POST /api/requirements/<id>/edge-cases
+    const response = await this.coreApi(
+      `/api/requirements/${requirementId}/edge-cases`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }
+    );
+
+    // Expected shape:
+    // { requirement_id: 123, edge_cases: ["...", "..."] }
+    return response;
+  } catch (error) {
+    console.error("Error generating edge cases:", error);
+    throw new Error(error.message || "Failed to generate edge cases");
+  }
+};
+
 
 /**
  * Submit clarification for an ambiguous term
@@ -1079,5 +1115,6 @@ export const {
 
   runContradictionAnalysis,
   getLatestContradictionReport,
-  runProjectContradictionAnalysis
+  runProjectContradictionAnalysis,
+  generateEdgeCases
 } = apiService;
