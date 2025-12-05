@@ -159,7 +159,64 @@ Important:
 - Domain-specific technical terms should generally not be flagged as ambiguous
 
 Respond ONLY with the JSON object, no additional text."""
+
+def get_edge_case_generation_prompt(
+    requirement_text: str,
+    max_cases: int = 10,
+    error_message: Optional[str] = None,
+) -> str:
+    """
+    Generates a structured, role-based prompt for the LLM to create edge test cases
+    for a single requirement. Optionally includes a corrective section if a previous
+    attempt failed validation.
+    """
     
+    correction_section = ""
+    if error_message:
+        # Escape braces so the error message doesn't break the f-string / JSON examples
+        escaped_error = error_message.replace("{", "{{").replace("}", "}}")
+        correction_section = f"""
+        --- CORRECTION ---
+        Your previous response failed validation with the following error:
+        {escaped_error}
+
+        Please analyze this error and correct your response to strictly adhere to the requested JSON schema.
+        Do not apologize or add extra commentary.
+        --- END CORRECTION ---
+        """
+
+    return f"""
+    You are an expert Requirements Engineer and QA Test Designer. Your task is to read a single software requirement
+    and generate a set of focused EDGE TEST CASES.
+
+    Analyze the following requirement carefully:
+    --- REQUIREMENT ---
+    {requirement_text}
+    --- END REQUIREMENT ---
+
+    {correction_section}
+
+    INSTRUCTIONS:
+    1. Generate concrete edge test cases that focus on:
+       - boundary values and limits,
+       - invalid, unexpected, or missing inputs,
+       - extreme or unusual usage patterns,
+       - conflicting or simultaneous user actions,
+       - environmental or system failure conditions (e.g., network, storage, latency).
+    2. Each edge case must be a short, clear description that a tester could turn into test steps.
+    3. Do NOT restate the requirement; focus only on tricky or easily overlooked scenarios.
+    4. Generate at most {max_cases} edge cases.
+    5. The final output MUST be a single, valid JSON object. Do not include any text, notes, or explanations outside of the JSON object.
+    6. The JSON object must strictly adhere to the following schema:
+        {{{{
+          "edge_cases": [
+            "First edge case description...",
+            "Second edge case description...",
+            "Third edge case description..."
+          ]
+        }}}}
+    """
+
 def get_contradiction_analysis_prompt(
   requirements_json: List[Dict], 
   project_context: Optional[str] = None,

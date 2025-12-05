@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import Tag from './Tag'; 
 import AmbiguityDetectionPanel from './AmbiguityDetectionPanel';
+import EdgeCasePanel from './EdgeCasePanel';
 
 const RequirementCard = ({ 
   requirement, 
@@ -10,7 +11,6 @@ const RequirementCard = ({
   isSelected = false,   
   onEdit,
   onDelete,
-  onGenerateEdgeCases
 }) => {
   const { req_id, title, description, status, priority, source_document_filename, tags } = requirement;
   const [isEditing, setIsEditing] = useState(false);
@@ -65,14 +65,6 @@ const RequirementCard = ({
   const handleClarificationSubmit = (result) => {
     if (result.updated_requirement) {
       setEditedDescription(result.updated_requirement.description);
-    }
-  };
-
-    const handleGenerateEdgeCases = () => {
-    if (onGenerateEdgeCases) {
-      onGenerateEdgeCases(requirement);
-    } else {
-      console.warn('onGenerateEdgeCases handler not provided');
     }
   };
 
@@ -165,15 +157,9 @@ const RequirementCard = ({
         enableRealTime={enableRealTimeAnalysis && isEditing}
       />
 
-      {/* Generate Edge Cases button under ambiguity detection */}
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={handleGenerateEdgeCases}
-          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
-        >
-          Generate Edge Cases
-        </button>
-      </div>
+      <EdgeCasePanel
+        requirement={{ ...requirement, description: editedDescription }} 
+      />
     </div>
   );
 };
@@ -195,7 +181,6 @@ RequirementCard.propTypes = {
     isSelected: PropTypes.bool,
     onEdit: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
-    onGenerateEdgeCases: PropTypes.func,
 };
 
 RequirementCard.defaultProps = {
@@ -204,7 +189,6 @@ RequirementCard.defaultProps = {
     isSelected: false,
     onEdit: () => console.log('Edit handler not provided'),
     onDelete: () => console.log('Delete handler not provided'),
-    onGenerateEdgeCases: () => console.log('Generate Edge Cases handler not provided'),
 };
 
 export default RequirementCard;
