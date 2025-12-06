@@ -436,6 +436,7 @@ def get_requirements():
                 "status": req.status,
                 "priority": req.priority,
                 "requirement_type": req.requirement_type,
+                "stakeholders": req.stakeholders,
                 "source_document_filename": req.source_document.filename if req.source_document else None,
                 "tags": [{"id": tag.id, "name": tag.name} for tag in req.tags]
             })
@@ -1216,6 +1217,7 @@ def submit_clarification():
                 "description": requirement.description,
                 "status": requirement.status,
                 "priority": requirement.priority,
+                "stakeholders": requirement.stakeholders,
                 "requirement_type": requirement.requirement_type
             }
         
@@ -2081,6 +2083,7 @@ def get_document_requirements(document_id):
                 "description": req.description,
                 "status": req.status,
                 "priority": req.priority,
+                "stakeholders": req.stakeholders,
                 "requirement_type": req.requirment_type,
                 "source_document_filename": document.filename, # We already have the doc
                 "tags": [{"id": tag.id, "name": tag.name} for tag in req.tags]
@@ -2123,6 +2126,7 @@ def update_requirement(requirement_id):
         requirement.description = data.get('description', requirement.description)
         requirement.status = data.get('status', requirement.status)
         requirement.priority = data.get('priority', requirement.priority)
+        requirement.stakeholders = data.get('stakeholders', requirement.stakeholders)
         requirement.requirement_type = data.get('requirement_type', requirement.requirement_type)
         
         # Note: Updating tags is more complex (many-to-many)
@@ -2138,6 +2142,7 @@ def update_requirement(requirement_id):
             "description": requirement.description,
             "status": requirement.status,
             "priority": requirement.priority,
+            "stakeholders": requirement.stakeholders,
             "requirement_type": requirement.requirement_type,
             "source_document_filename": requirement.source_document.filename if requirement.source_document else None,
             "tags": [{"id": tag.id, "name": tag.name} for tag in requirement.tags]

@@ -27,6 +27,9 @@ def save_requirements_to_db(validated_data: GeneratedRequirements, document_id: 
     
     for epic in validated_data.epics:
         for user_story in epic.user_stories:
+            stakeholders = getattr(user_story, "stakeholders", [])
+            if not isinstance(stakeholders, list):
+                stakeholders = []
             new_req = Requirement(
                 req_id=f"REQ-{req_counter:03d}",
                 title=user_story.story,
@@ -35,7 +38,9 @@ def save_requirements_to_db(validated_data: GeneratedRequirements, document_id: 
                 priority=user_story.priority,
                 requirement_type=getattr(user_story, "requirement_type", None),
                 source_document_id=document_id,
-                owner_id=owner_id
+                owner_id=owner_id,
+                stakeholders=stakeholders  # <-- NEW: Add stakeholders
+
             )
             
             for tag_name in user_story.suggested_tags:

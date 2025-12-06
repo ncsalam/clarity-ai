@@ -19,9 +19,10 @@ const RequirementCard = ({
     description, 
     status, 
     priority, 
-    requirement_type,   // <-- ADDED
+    requirement_type,  
     source_document_filename, 
-    tags 
+    tags,
+    stakeholders
   } = requirement;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -129,8 +130,6 @@ const RequirementCard = ({
 
       {/* TAG SECTION — requirement_type added here */}
       <div className="flex flex-wrap gap-2 mb-4">
-        
-        {/* Requirement Type Tag */}
         {requirement_type && (
           <Tag name={requirement_type} type="type" /> 
         )}
@@ -153,6 +152,18 @@ const RequirementCard = ({
         />
       ) : (
         <p className="text-gray-700 mb-4 whitespace-pre-line">{description}</p>
+      )}
+
+      {/* STAKEHOLDERS */}
+      {stakeholders && stakeholders.length > 0 && (
+        <div className="mb-4">
+          <span className="font-semibold text-gray-700">Stakeholders:</span>
+          <ul className="list-disc list-inside text-gray-600 ml-4">
+            {stakeholders.map((stakeholder, index) => (
+              <li key={index}>{stakeholder}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* SOURCE DOCUMENT */}
@@ -181,9 +192,10 @@ RequirementCard.propTypes = {
     description: PropTypes.string,
     status: PropTypes.string,
     priority: PropTypes.string,
-    requirement_type: PropTypes.string,   // <-- UPDATED PROP TYPE
+    requirement_type: PropTypes.string,
     source_document_filename: PropTypes.string,
     tags: PropTypes.arrayOf(PropTypes.object),
+    stakeholders: PropTypes.arrayOf(PropTypes.string), // <-- added
   }).isRequired,
   enableRealTimeAnalysis: PropTypes.bool,
   isConflicting: PropTypes.bool,
