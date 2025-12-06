@@ -12,7 +12,8 @@ from app.prompts import (
     get_summary_generation_prompt,
     get_context_evaluation_prompt,
     get_contradiction_analysis_prompt,
-    get_json_correction_prompt
+    get_json_correction_prompt,
+    get_edge_case_generation_prompt
 )
 
 # --- Test Cases ---
@@ -99,3 +100,44 @@ class TestPromptGeneration:
         assert isinstance(prompt, str)
         assert "Term to evaluate:" in prompt
         assert "is_ambiguous" in prompt
+
+    def test_edge_case_prompt_without_error(self):
+        """Prompt should include requirement text and max_cases, without correction block."""
+        requirement_text = "As a user, I want to reset my password using a magic link."
+        prompt = get_edge_case_generation_prompt(
+            requirement_text=requirement_text,
+            max_cases=7,
+            error_message=None,
+        )
+
+        # Basic content checks
+        assert requirement_text in prompt
+        assert "Generate a set of focused EDGE TEST CASES" in prompt or "EDGE TEST CASES" in prompt
+        assert "Generate at most 7 edge cases" in prompt or "at most 7 edge cases" in prompt
+
+        # Should NOT contain correction section
+        assert "--- CORRECTION ---" not in prompt
+
+        # Should specify the JSON schema
+        assert '"edge_cases"' in prompt
+        assert '"First edge case description..."' in prompt
+
+    def test_edge_case_prompt_with_error(self):
+        """Prompt should include correction section when error_message is provided."""
+        requirement_text = "As a user, I want to reset my password using a magic link."
+        error_msg = "Validation failed: missing edge_cases field"
+
+        prompt = get_edge_case_generation_prompt(
+            requirement_text=requirement_text,
+            max_cases=5,
+            error_message=error_msg,
+        )
+
+        assert requirement_text in prompt
+        assert "--- CORRECTION ---" in prompt
+        assert "Your previous response failed validation" in prompt
+        assert "Validation failed: missing edge_cases field" in prompt
+
+        # Still enforces JSON-only output and schema
+        assert '"edge_cases"' in prompt
+        assert '"First edge case description..."' in prompt

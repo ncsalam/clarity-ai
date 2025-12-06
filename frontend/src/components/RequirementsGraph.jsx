@@ -104,7 +104,7 @@ const RequirementsGraph = ({ requirements }) => {
     // ---------------------------
     const simulation = d3.forceSimulation(nodes)
       .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.type === 'has-tag' ? 80 : 150))
-      .force('charge', d3.forceManyBody().strength(-300))
+      .force('charge', d3.forceManyBody().strength(-125))
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(d => d.type === 'requirement' ? 25 : 35));
 
