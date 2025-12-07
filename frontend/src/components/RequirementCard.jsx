@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import Tag from './Tag'; 
+import Tag from './Tag';
 import AmbiguityDetectionPanel from './AmbiguityDetectionPanel';
+import EdgeCasePanel from './EdgeCasePanel';
 
 const RequirementCard = ({ 
   requirement, 
   enableRealTimeAnalysis = false,
   isConflicting = false,
-  isSelected = false,   
+  isSelected = false,
   onEdit,
   onDelete,
   batchAnalysis
@@ -19,7 +20,7 @@ const RequirementCard = ({
     description, 
     status, 
     priority, 
-    requirement_type,  
+    requirement_type,
     source_document_filename, 
     tags,
     stakeholders
@@ -66,30 +67,29 @@ const RequirementCard = ({
   };
 
   const cardClasses = `
-    bg-white rounded-xl shadow-lg p-6 transition-all duration-300 
+    bg-white rounded-xl shadow-lg p-6 transition-all duration-300
     ${isSelected ? 'ring-4 ring-indigo-400 ring-offset-2' : ''}
     ${isConflicting 
-        ? 'border-l-4 border-red-500 bg-red-50 hover:shadow-xl' 
-        : 'border-l-4 border-transparent hover:shadow-md'}
+      ? 'border-l-4 border-red-500 bg-red-50 hover:shadow-xl'
+      : 'border-l-4 border-transparent hover:shadow-md'}
   `;
 
   return (
     <div className={cardClasses}>
       <div className="flex justify-between items-start mb-3">
         <div className="min-w-0">
-
           <div className="flex items-center space-x-3">
             {isConflicting && (
               <span 
-                className="w-5 h-5 text-red-600 flex-shrink-0 animate-pulse" 
-                role="img" 
+                className="w-5 h-5 text-red-600 flex-shrink-0 animate-pulse"
+                role="img"
                 aria-label="warning"
-                title="This requirement conflicts with another." 
+                title="This requirement conflicts with another."
               >
                 ⚠️
               </span>
             )}
-            
+
             <h3 className={`text-xl font-semibold leading-tight ${isConflicting ? 'text-red-700' : 'text-gray-900'} truncate`}>
               {title}
             </h3>
@@ -111,34 +111,34 @@ const RequirementCard = ({
           )}
 
           <button 
-            onClick={() => onEdit(requirement)} 
+            onClick={() => onEdit(requirement)}
             className="text-gray-500 hover:text-indigo-600 p-1 rounded-full transition-colors"
             title="Edit Requirement"
           >
-            <span role="img" aria-label="edit" style={{fontSize: '1.25rem'}}>✏️</span>
+            <span role="img" aria-label="edit" style={{ fontSize: '1.25rem' }}>✏️</span>
           </button>
 
           <button 
-            onClick={() => onDelete(requirement)} 
+            onClick={() => onDelete(requirement)}
             className="text-gray-500 hover:text-red-600 p-1 rounded-full transition-colors"
             title="Delete Requirement"
           >
-            <span role="img" aria-label="delete" style={{fontSize: '1.25rem'}}>🗑️</span>
+            <span role="img" aria-label="delete" style={{ fontSize: '1.25rem' }}>🗑️</span>
           </button>
         </div>
       </div>
 
-      {/* TAG SECTION — requirement_type added here */}
+      {/* TAG SECTION */}
       <div className="flex flex-wrap gap-2 mb-4">
         {requirement_type && (
-          <Tag name={requirement_type} type="type" /> 
+          <Tag name={requirement_type} type="type" />
         )}
 
         <Tag name={status} type="status" />
         <Tag name={`${priority} Priority`} type="priority" />
 
         {tags && tags.map(tag => (
-          <Tag key={tag.name} name={tag.name} /> 
+          <Tag key={tag.name} name={tag.name} />
         ))}
       </div>
 
@@ -171,7 +171,6 @@ const RequirementCard = ({
         <span className="font-semibold">Source:</span> {source_document_filename || 'N/A'}
       </div>
 
-      {/* AMBIGUITY PANEL */}
       <AmbiguityDetectionPanel
         requirement={{ ...requirement, description: editedDescription }}
         onAnalysisComplete={handleAnalysisComplete}
@@ -179,6 +178,10 @@ const RequirementCard = ({
         autoAnalyze={shouldAnalyze}
         enableRealTime={enableRealTimeAnalysis && isEditing}
         batchAnalysis={batchAnalysis}
+      />
+
+      <EdgeCasePanel
+        requirement={{ ...requirement, description: editedDescription }}
       />
     </div>
   );
@@ -194,21 +197,20 @@ RequirementCard.propTypes = {
     priority: PropTypes.string,
     requirement_type: PropTypes.string,
     source_document_filename: PropTypes.string,
-    tags: PropTypes.arrayOf(PropTypes.object),
-    stakeholders: PropTypes.arrayOf(PropTypes.string), // <-- added
+    tags: PropTypes.arrayOf(PropTypes.object)
   }).isRequired,
   enableRealTimeAnalysis: PropTypes.bool,
   isConflicting: PropTypes.bool,
   isSelected: PropTypes.bool,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
-  batchAnalysis: PropTypes.object,
+  batchAnalysis: PropTypes.object
 };
 
 RequirementCard.defaultProps = {
   enableRealTimeAnalysis: false,
   isConflicting: false,
-  isSelected: false,
+  isSelected: false
 };
 
 export default RequirementCard;
