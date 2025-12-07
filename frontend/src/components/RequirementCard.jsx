@@ -13,27 +13,27 @@ const RequirementCard = ({
   onDelete,
   batchAnalysis
 }) => {
-  const { req_id, title, description, status, priority, source_document_filename, tags } = requirement;
+
+  const { 
+    req_id, 
+    title, 
+    description, 
+    status, 
+    priority, 
+    requirement_type,   // <-- ADDED
+    source_document_filename, 
+    tags 
+  } = requirement;
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedDescription, setEditedDescription] = useState(description);
   const [shouldAnalyze, setShouldAnalyze] = useState(false);
   const debounceTimerRef = useRef(null);
 
-  // const statusColor = {
-  //   'Draft': 'text-gray-500',
-  //   'In Review': 'text-yellow-600',
-  //   'Approved': 'text-green-600',
-  //   'Implemented': 'text-indigo-600',
-  // };
-
   useEffect(() => {
-    if (!enableRealTimeAnalysis || !isEditing) {
-      return;
-    }
+    if (!enableRealTimeAnalysis || !isEditing) return;
 
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
     debounceTimerRef.current = setTimeout(() => {
       if (editedDescription && editedDescription.trim() !== description) {
@@ -42,17 +42,13 @@ const RequirementCard = ({
     }, 1000);
 
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
   }, [editedDescription, enableRealTimeAnalysis, isEditing, description]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
-    if (isEditing) {
-      setEditedDescription(description);
-    }
+    if (isEditing) setEditedDescription(description);
   };
 
   const handleDescriptionChange = (e) => {
@@ -80,6 +76,26 @@ const RequirementCard = ({
     return (
     <div className={cardClasses}>
       <div className="flex justify-between items-start mb-3">
+        <div className="min-w-0">
+
+          <div className="flex items-center space-x-3">
+            {isConflicting && (
+              <span 
+                className="w-5 h-5 text-red-600 flex-shrink-0 animate-pulse" 
+                role="img" 
+                aria-label="warning"
+                title="This requirement conflicts with another." 
+              >
+                ⚠️
+              </span>
+            )}
+            
+            <h3 className={`text-xl font-semibold leading-tight ${isConflicting ? 'text-red-700' : 'text-gray-900'} truncate`}>
+              {title}
+            </h3>
+
+            <span className="text-gray-500 font-mono text-sm">{req_id}</span>
+          </div>
         <div className="flex items-center space-x-3 min-w-0">
           {isConflicting && (
             <span 
@@ -97,7 +113,8 @@ const RequirementCard = ({
           </h3>
           <span className="text-gray-500 font-mono text-sm ml-2">{req_id}</span>
         </div>
-        
+
+        {/* Top-right buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {enableRealTimeAnalysis && (
             <button
@@ -108,6 +125,7 @@ const RequirementCard = ({
               {isEditing ? 'Cancel' : 'Edit'}
             </button>
           )}
+
           {/* --- THIS IS THE FIX --- */}
           <button 
             onClick={() => onEdit(requirement)} 
@@ -116,6 +134,7 @@ const RequirementCard = ({
           >
             <span role="img" aria-label="edit" style={{fontSize: '1.25rem'}}>✏️</span>
           </button>
+
           <button 
             onClick={() => onDelete(requirement)} 
             className="text-gray-500 hover:text-red-600 p-1 rounded-full transition-colors"
@@ -126,7 +145,14 @@ const RequirementCard = ({
         </div>
       </div>
 
+      {/* TAG SECTION — requirement_type added here */}
       <div className="flex flex-wrap gap-2 mb-4">
+        
+        {/* Requirement Type Tag */}
+        {requirement_type && (
+          <Tag name={requirement_type} type="type" /> 
+        )}
+
         <Tag name={status} type="status" />
         <Tag name={`${priority} Priority`} type="priority" />
 
@@ -135,6 +161,7 @@ const RequirementCard = ({
         ))}
       </div>
 
+      {/* DESCRIPTION */}
       {isEditing ? (
         <textarea
           value={editedDescription}
@@ -146,10 +173,12 @@ const RequirementCard = ({
         <p className="text-gray-700 mb-4 whitespace-pre-line">{description}</p>
       )}
 
+      {/* SOURCE DOCUMENT */}
       <div className="text-sm text-gray-500 mb-4">
         <span className="font-semibold">Source:</span> {source_document_filename || 'N/A'}
       </div>
 
+      {/* AMBIGUITY PANEL */}
       <AmbiguityDetectionPanel
         requirement={{ ...requirement, description: editedDescription }}
         onAnalysisComplete={handleAnalysisComplete}
@@ -175,6 +204,7 @@ RequirementCard.propTypes = {
     description: PropTypes.string,
     status: PropTypes.string,
     priority: PropTypes.string,
+    requirement_type: PropTypes.string,   // <-- UPDATED PROP TYPE
     source_document_filename: PropTypes.string,
     tags: PropTypes.arrayOf(PropTypes.object),
   }).isRequired,
@@ -187,11 +217,9 @@ RequirementCard.propTypes = {
 };
 
 RequirementCard.defaultProps = {
-    enableRealTimeAnalysis: false,
-    isConflicting: false,
-    isSelected: false,
-    onEdit: () => console.log('Edit handler not provided'),
-    onDelete: () => console.log('Delete handler not provided'),
+  enableRealTimeAnalysis: false,
+  isConflicting: false,
+  isSelected: false,
 };
 
 export default RequirementCard;

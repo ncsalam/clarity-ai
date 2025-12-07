@@ -32,33 +32,29 @@ class Requirement(db.Model):
     __tablename__ = 'requirements'
     
     id = db.Column(db.Integer, primary_key=True)
-    req_id = db.Column(db.String(50), nullable=False)  # Unique per owner_id, not globally
+    req_id = db.Column(db.String(50), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(50), default='Draft')
     priority = db.Column(db.String(50), default='Medium')
-    owner_id = db.Column(db.String(255), nullable=True)  # SuperTokens user ID
+    requirement_type = db.Column(db.String(50), nullable=True)  # <-- Add this
+    owner_id = db.Column(db.String(255), nullable=True)
     
-    # Renamed document_id to source_document_id for clarity
     source_document_id = db.Column(db.Integer, db.ForeignKey('documents.id'))
     source_document = db.relationship('Document', back_populates='requirements')
 
-    # It links a Requirement to the Tag model through our association table.
     tags = db.relationship('Tag', secondary=requirement_tags, lazy='subquery',
         backref=db.backref('requirements', lazy=True))
     
-    # Relationships for ambiguity
     ambiguity_analyses = db.relationship('AmbiguityAnalysis', back_populates='requirement', cascade='all, delete-orphan')
     clarification_history = db.relationship('ClarificationHistory', back_populates='requirement', cascade='all, delete-orphan')
 
-    # Composite unique constraint: req_id is unique per owner_id
     __table_args__ = (
         db.UniqueConstraint('req_id', 'owner_id', name='uq_requirements_req_id_owner'),
     )
 
     def __repr__(self):
         return f"<Requirement {self.req_id}: {self.title}>"
-
 class ProjectSummary(db.Model):
     __tablename__ = 'project_summaries'
     

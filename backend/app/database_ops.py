@@ -1,5 +1,5 @@
 from .main import db
-from .models import Requirement, Tag # Import the Tag model
+from .models import Requirement, Tag  # Import the Tag model
 from .schemas import GeneratedRequirements
 
 def save_requirements_to_db(validated_data: GeneratedRequirements, document_id: int, owner_id: str = None):
@@ -18,7 +18,6 @@ def save_requirements_to_db(validated_data: GeneratedRequirements, document_id: 
     db.session.expire_all()
     
     # Get the next requirement counter, scoped by owner_id if provided
-    # Query the database directly to get the actual count
     if owner_id:
         req_counter = db.session.query(Requirement).filter_by(owner_id=owner_id).count() + 1
     else:
@@ -32,20 +31,23 @@ def save_requirements_to_db(validated_data: GeneratedRequirements, document_id: 
                 req_id=f"REQ-{req_counter:03d}",
                 title=user_story.story,
                 description="\n".join([f"- {ac}" for ac in user_story.acceptance_criteria]),
-                status="Draft", 
-                priority=user_story.priority, 
+                status="Draft",
+                priority=user_story.priority,
+                requirement_type=getattr(user_story, "requirement_type", None),
                 source_document_id=document_id,
                 owner_id=owner_id
-            )     
+            )
+            
             for tag_name in user_story.suggested_tags:
                 tag = Tag.query.filter_by(name=tag_name).first()
                 
                 if not tag:
                     tag = Tag(name=tag_name)
                     db.session.add(tag)
-                    db.session.flush() 
+                    db.session.flush()
                 
                 new_req.tags.append(tag)
+            
             db.session.add(new_req)
             req_counter += 1
             

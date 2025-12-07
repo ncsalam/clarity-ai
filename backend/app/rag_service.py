@@ -27,12 +27,12 @@ COLLECTION_NAME = "document_chunks"
 DEFAULT_REQUIREMENTS_QUERY = """
 Analyze the provided context and extract all functional requirements, non-functional requirements,
 and user stories. For each item, provide a unique ID, a descriptive title, a detailed description,
-an estimated priority (Low, Medium, High), and a status ('To Do').
+an estimated priority (Low, Medium, High), the requirement_type (Functional, Non-Functional), and a status ('To Do').
 Also include relevant tags (e.g., 'Security', 'UI/UX', 'Performance', 'Database').
 
 Structure the output as a JSON object with a single "epics" key. Each epic should contain
 a list of "user_stories", and each user story should have "story", "acceptance_criteria",
-"priority", and "suggested_tags".
+"priority", 'requirement_type', and "suggested_tags".
 """
 
 def get_vector_store():
