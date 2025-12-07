@@ -1,24 +1,35 @@
 // --- PREDEFINED TAG COLORS ---
 const predefinedColors = [
   // priority
-  { match: 'high priority', color: '#ff0000ff' },    
+  { match: 'high priority', color: '#d62728' },    
   { match: 'medium priority', color: '#f9c700ff' },  
-  { match: 'low priority', color: '#47fc00ff' },     
+  { match: 'low priority', color: '#2ca02c' },     
 
   // categories
-  { match: 'security', color: '#800af6ff' },         
-  { match: 'ux', color: '#0674fbff' },               
+  { match: 'security', color: '#9467bd' },         
+  { match: 'ux', color: '#17befc' },               
   { match: 'ui', color: '#051675ff' },               
   { match: 'authentication', color: '#085404ff' },   
-  { match: 'performance', color: '#e879f9' },      
+  { match: 'performance', color: '#e377c2' },      
 ];
 
 // --- RANDOM COLORS (used only when tag doesn't match predefined) ---
 const randomPalette = [
-  '#f87171', '#fb923c', '#fbbf24', '#00ffddff', '#bfff00ff',
-  '#2dd4bf', '#38bdf8', '#60a5fa', '#818cf8', '#a78bfa',
-  '#c084fc', '#e879f9', '#f472b6'
+  '#00FFD1', 
+  '#FF6F00', 
+  '#00A1FF', 
+  '#FF00A8', 
+  '#7FFF00', 
+  '#8c00ff53', 
+  '#ff004c36', 
+  '#00FF66', 
+  '#FFB300', 
+  '#004CFF', 
+  '#FF8500',
+  '#00FFE1', 
+  '#B200FF'  
 ];
+
 
 // GLOBAL map that persists during the app lifetime
 const tagColorCache = new Map();
