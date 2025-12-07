@@ -968,7 +968,7 @@ def analyze_requirement_ambiguity(requirement_id):
             "total_terms_flagged": analysis.total_terms_flagged,
             "terms_resolved": analysis.terms_resolved,
             "status": analysis.status,
-            "terms": [
+            "ambiguous_terms": [
                 {
                     "id": term.id,
                     "term": term.term,
@@ -1048,7 +1048,7 @@ def analyze_batch_ambiguity():
                 "total_terms_flagged": analysis.total_terms_flagged,
                 "terms_resolved": analysis.terms_resolved,
                 "status": analysis.status,
-                "terms": [
+                "ambiguous_terms": [
                     {
                         "id": term.id,
                         "term": term.term,

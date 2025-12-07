@@ -17,6 +17,7 @@ from .lexicon_manager import LexiconManager
 from .ambiguity_detector import AmbiguityDetector
 from .context_analyzer import ContextAnalyzer
 from .suggestion_generator import SuggestionGenerator
+from .semantic_enhancement_service import SemanticEnhancementService
 
 
 class AmbiguityService:
@@ -29,6 +30,7 @@ class AmbiguityService:
         """Initialize the service with all components"""
         self.lexicon_manager = LexiconManager()
         self.detector = AmbiguityDetector(self.lexicon_manager)
+        self.semantic_enhancement_service = SemanticEnhancementService(self.lexicon_manager)
         
         # Initialize LLM client (shared across components)
         try:
@@ -63,10 +65,40 @@ class AmbiguityService:
         # Step 1: Initial lexicon-based detection
         detection_result = self.detector.analyze_text(text, owner_id)
         flagged_terms = detection_result['flagged_terms']
+        for t in flagged_terms:
+            t.setdefault('detection_method', 'lexicon_exact')
         
         print(f"Lexicon scan found {len(flagged_terms)} potential ambiguous terms")
         
-        # Step 2: Context evaluation (if LLM available and enabled)
+        # Step 2: Semantic enhancement (always enabled)
+        try:
+            semantic_terms = self.semantic_enhancement_service.find_semantically_similar_terms(text)
+            print(f"Semantic enhancement found {len(semantic_terms)} semantically similar terms")
+            
+            existing_positions = {(t['position_start'], t['position_end']) for t in flagged_terms}
+            sentences = self.detector._segment_sentences(text)  # reuse same segmentation
+            new_semantic_terms = [
+                {
+                    **t,
+                    'sentence_context': self.detector._find_sentence_for_position(
+                        t['position_start'], sentences
+                    ),
+                    'detection_method': 'semantic_similarity'
+                }
+                for t in semantic_terms
+                if (t['position_start'], t['position_end']) not in existing_positions
+            ]
+            
+            flagged_terms.extend(new_semantic_terms)
+            # Re-sort by position
+            flagged_terms.sort(key=lambda t: t['position_start'])
+            
+            print(f"After semantic enhancement: {len(flagged_terms)} total terms")
+        except Exception as e:
+            print(f"Semantic enhancement failed: {e}")
+            print("Continuing with lexicon-only detection")
+        
+        # Step 3: Context evaluation (if LLM available and enabled)
         evaluated_terms = []
         
         if use_llm and self.llm_available and self.context_analyzer:
@@ -85,7 +117,7 @@ class AmbiguityService:
         
         print(f"Final analysis: {len(ambiguous_terms)} ambiguous terms confirmed")
         
-        # Step 3: Save to database
+        # Step 4: Save to database
         analysis = self._save_analysis_to_db(
             text=text,
             requirement_id=requirement_id,
