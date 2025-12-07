@@ -38,6 +38,7 @@ class Requirement(db.Model):
     status = db.Column(db.String(50), default='Draft')
     priority = db.Column(db.String(50), default='Medium')
     requirement_type = db.Column(db.String(50), nullable=True)  # <-- Add this
+
     owner_id = db.Column(db.String(255), nullable=True)
     
     source_document_id = db.Column(db.Integer, db.ForeignKey('documents.id'))
@@ -45,6 +46,8 @@ class Requirement(db.Model):
 
     tags = db.relationship('Tag', secondary=requirement_tags, lazy='subquery',
         backref=db.backref('requirements', lazy=True))
+
+    stakeholders = db.Column(db.JSON, default=list)
     
     ambiguity_analyses = db.relationship('AmbiguityAnalysis', back_populates='requirement', cascade='all, delete-orphan')
     clarification_history = db.relationship('ClarificationHistory', back_populates='requirement', cascade='all, delete-orphan')

@@ -22,7 +22,8 @@ const RequirementCard = ({
     priority, 
     requirement_type,
     source_document_filename, 
-    tags 
+    tags,
+    stakeholders
   } = requirement;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -151,6 +152,18 @@ const RequirementCard = ({
         />
       ) : (
         <p className="text-gray-700 mb-4 whitespace-pre-line">{description}</p>
+      )}
+
+      {/* STAKEHOLDERS */}
+      {stakeholders && stakeholders.length > 0 && (
+        <div className="mb-4">
+          <span className="font-semibold text-gray-700">Stakeholders:</span>
+          <ul className="list-disc list-inside text-gray-600 ml-4">
+            {stakeholders.map((stakeholder, index) => (
+              <li key={index}>{stakeholder}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* SOURCE DOCUMENT */}

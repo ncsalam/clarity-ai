@@ -11,7 +11,9 @@ class UserStory(BaseModel):
     suggested_tags: List[str] = Field(..., description="A list of suggested tags for categorization.")
     requirement_type: Optional[str] = Field(
         None, description="The type/classification of the requirement: 'Functional', 'Non-functional'."
-    )
+    ),
+    stakeholders: List[str] = Field(..., description="A list of suggested stakeholders.")
+
 
 class Epic(BaseModel):
     """Groups a collection of related user stories under a single feature or epic."""

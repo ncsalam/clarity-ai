@@ -90,6 +90,7 @@ def upgrade():
         sa.Column('status', sa.String(length=50), nullable=True),
         sa.Column('priority', sa.String(length=50), nullable=True),
         sa.Column('requirement_type', sa.String(length=50), nullable=True),  # <-- Added column
+        sa.Column('stakeholders', sa.JSON(), nullable=True),  # <-- NEW COLUMN
         sa.Column('owner_id', sa.String(length=255), nullable=True),
         sa.Column('source_document_id', sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(['source_document_id'], ['documents.id'], ),

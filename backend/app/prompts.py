@@ -41,9 +41,10 @@ def get_requirements_generation_prompt(
     1. Identify the main features or epics discussed in the context.
     2. For each epic, generate 3-5 clear, concise user stories in the format: "As a [persona], I want [action], so that [benefit]."
     3. For each user story, generate 2-4 specific, testable acceptance criteria.
-    4. For each user story, provide a 'priority' ('Low', 'Medium', or 'High'), 'requirement_type' ('Functional', 'Non-Functional') and a list of 'suggested_tags' (e.g., 'UI/UX', 'Database').
-    5. The final output MUST be a single, valid JSON object. Do not include any text, notes, or explanations outside of the JSON object.
-    6. The JSON object must strictly adhere to the following schema:
+    4. For each user story generate 1-4 stakeholders
+    5. For each user story, provide a 'priority' ('Low', 'Medium', or 'High'), 'requirement_type' ('Functional', 'Non-Functional'), and a list of 'suggested_tags' (e.g., 'UI/UX', 'Database').
+    6. The final output MUST be a single, valid JSON object. Do not include any text, notes, or explanations outside of the JSON object.
+    7. The JSON object must strictly adhere to the following schema:
         {{{{
           "epics": [
             {{{{
@@ -58,6 +59,11 @@ def get_requirements_generation_prompt(
                   "priority": "High",
                   "suggested_tags": ["Tag1", "Tag2"],
                   "requirement_type": "Functional",
+                   "stakeholders": [
+                    "stakeholder 1",
+                    "stakeholder 2"
+                  ],
+
                 }}}}
               ]
             }}}}
