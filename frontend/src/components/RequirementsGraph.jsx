@@ -96,7 +96,11 @@ const RequirementsGraph = ({ requirements }) => {
       .force('charge', d3.forceManyBody().strength(-250))
       .force('x', d3.forceX().x(d => (d.type === 'requirement' ? sourceCenters.get(d.sourceDocument)?.x || centerX : centerX)).strength(0.15))
       .force('y', d3.forceY().y(d => (d.type === 'requirement' ? sourceCenters.get(d.sourceDocument)?.y || centerY : centerY)).strength(0.15))
-      .force('collision', d3.forceCollide().radius(d => d.type === 'requirement' ? 28 : 36));
+      .force('collision', d3.forceCollide().radius(d => d.type === 'requirement' ? 28 : 36))
+      .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.type === 'has-tag' ? 80 : 150))
+      .force('charge', d3.forceManyBody().strength(-125))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(d => d.type === 'requirement' ? 25 : 35));
 
     simulationRef.current = simulation;
 
