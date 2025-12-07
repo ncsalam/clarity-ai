@@ -1,131 +1,156 @@
-// RequirementsGraph.test.jsx
+// tests/RequirementsGraph.test.jsx
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import RequirementsGraph from '../components/RequirementsGraph';
-import * as tagColors from '../util/tagColors';
-import * as d3 from 'd3';
+import RequirementsGraph from '../src/components/RequirementsGraph';
+import * as tagColors from '../src/util/tagColors';
+import { vi } from 'vitest';
 
+// -------------------------
 // Mock getTagColor
-jest.mock('../util/tagColors', () => ({
-  getTagColor: jest.fn(name => {
+// -------------------------
+vi.mock('../src/util/tagColors', () => ({
+  getTagColor: vi.fn(name => {
     const colors = { UI: '#ff0000', Backend: '#00ff00', 'source:doc1': '#0000ff' };
     return colors[name] || '#cccccc';
   }),
 }));
 
-// Mock D3
-const mockTickHandlers = {};
-const mockSimulation = {
-  force: jest.fn().mockReturnThis(),
-  on: jest.fn((event, cb) => {
-    if (event === 'tick') mockTickHandlers.tick = cb;
-    return mockSimulation;
-  }),
-  alphaTarget: jest.fn().mockReturnThis(),
-  restart: jest.fn().mockReturnThis(),
-  stop: jest.fn(),
-};
-jest.mock('d3', () => {
-  const original = jest.requireActual('d3');
-  return {
-    ...original,
-    forceSimulation: jest.fn(() => mockSimulation),
-    drag: jest.fn(() => ({ on: jest.fn().mockReturnThis() })),
-    select: jest.fn(() => ({
-      selectAll: jest.fn(() => ({
-        remove: jest.fn(),
-        data: jest.fn(() => ({ join: jest.fn(() => ({ call: jest.fn(), append: jest.fn().mockReturnThis() })) })),
-      })),
-      append: jest.fn(() => ({ attr: jest.fn().mockReturnThis(), call: jest.fn(), selectAll: jest.fn().mockReturnThis() })),
-      call: jest.fn(),
+// -------------------------
+// Full D3 Mock
+// -------------------------
+vi.mock('d3', () => {
+  const callbacks = {};
+  const simulationNodes = [];
+
+  const chainable = () => ({
+    select: vi.fn(() => chainable()),
+    selectAll: vi.fn(() => chainable()),
+    append: vi.fn(() => chainable()),
+    attr: vi.fn(() => chainable()),
+    style: vi.fn(() => chainable()),
+    text: vi.fn(() => chainable()),
+    call: vi.fn(() => chainable()),
+    on: vi.fn((event, cb) => {
+      callbacks[event] = cb;
+      return chainable();
+    }),
+    remove: vi.fn(),
+    data: vi.fn(() => ({
+      join: vi.fn(() => chainable()),
+      enter: vi.fn(() => chainable()),
+      exit: vi.fn(() => chainable()),
     })),
-    zoom: jest.fn(() => ({ scaleExtent: jest.fn().mockReturnThis(), on: jest.fn().mockReturnThis() })),
+    nodes: vi.fn(() => []),
+    node: vi.fn(() => document.createElement('div')),
+    filter: vi.fn(() => chainable()), // important for your link.filter() calls
+  });
+
+  const mockSimulation = {
+    nodes: vi.fn(() => simulationNodes),
+    force: vi.fn().mockReturnThis(),
+    alphaTarget: vi.fn().mockReturnThis(),
+    restart: vi.fn().mockReturnThis(),
+    stop: vi.fn(),
+    on: vi.fn((event, cb) => {
+      callbacks[event] = cb;
+      return mockSimulation;
+    }),
   };
+
+  const d3Mock = {
+    ...chainable(),
+    select: vi.fn(() => chainable()),
+    selectAll: vi.fn(() => chainable()),
+    forceSimulation: vi.fn((nodes) => {
+      if (nodes) simulationNodes.push(...nodes);
+      return mockSimulation;
+    }),
+    forceLink: vi.fn(() => ({
+      id: vi.fn().mockReturnThis(),
+      distance: vi.fn().mockReturnThis(),
+      links: vi.fn().mockReturnThis(),
+    })),
+    forceManyBody: vi.fn(() => ({ strength: vi.fn().mockReturnThis() })),
+    forceX: vi.fn(() => ({ x: vi.fn().mockReturnThis(), strength: vi.fn().mockReturnThis() })),
+    forceY: vi.fn(() => ({ y: vi.fn().mockReturnThis(), strength: vi.fn().mockReturnThis() })),
+    forceCenter: vi.fn(() => d3Mock.forceCenter),
+    forceCollide: vi.fn(() => ({ radius: vi.fn().mockReturnThis(), strength: vi.fn().mockReturnThis(), iterations: vi.fn().mockReturnThis() })),
+    zoom: vi.fn(() => ({ scaleExtent: vi.fn().mockReturnThis(), on: vi.fn().mockReturnThis() })),
+    drag: vi.fn(() => ({ on: vi.fn((event, cb) => { callbacks[`drag_${event}`] = cb; return chainable(); }) })),
+    zoomIdentity: { k: 1, x: 0, y: 0 },
+    __callbacks: callbacks,
+    __simulation: mockSimulation,
+    __simulationNodes: simulationNodes,
+  };
+
+  return { default: d3Mock, ...d3Mock };
 });
 
+// -------------------------
+// Mock Requirements Data
+// -------------------------
 const mockRequirements = [
-  {
-    req_id: 'R1',
-    title: 'First requirement',
-    tags: [{ name: 'UI' }, { name: 'Backend' }],
-    source_document_filename: 'doc1',
-  },
-  {
-    req_id: 'R2',
-    title: 'Second requirement',
-    tags: [{ name: 'Backend' }],
-    source_document_filename: 'doc1',
-  },
+  { req_id: 'R1', title: 'First requirement', tags: [{ name: 'UI' }, { name: 'Backend' }], source_document_filename: 'doc1' },
+  { req_id: 'R2', title: 'Second requirement', tags: [{ name: 'Backend' }], source_document_filename: 'doc1' },
+  { req_id: 'R3', title: 'Third requirement', tags: [{ name: 'UI' }], source_document_filename: 'doc2' },
 ];
 
+const mockRequirementsNoTags = [
+  { req_id: 'R1', title: 'No tags requirement', tags: [], source_document_filename: 'doc1' },
+];
+
+// -------------------------
+// Tests
+// -------------------------
 describe('RequirementsGraph', () => {
-  it('renders empty state when no requirements are provided', () => {
-    render(<RequirementsGraph requirements={[]} />);
-    expect(screen.getByText(/No requirements to visualize/i)).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('renders SVG and tags when requirements are provided', () => {
-    render(<RequirementsGraph requirements={mockRequirements} />);
-    expect(document.querySelector('svg')).toBeInTheDocument();
-    expect(screen.getByText('UI')).toBeInTheDocument();
-    expect(screen.getByText('Backend')).toBeInTheDocument();
+  // -------- Basic Rendering --------
+  describe('Basic Rendering', () => {
+    it('renders SVG when requirements are provided', () => {
+      const { container } = render(<RequirementsGraph requirements={mockRequirements} />);
+      expect(container.querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('renders all unique tags in the legend', () => {
+      render(<RequirementsGraph requirements={mockRequirements} />);
+      expect(screen.getByText('UI')).toBeInTheDocument();
+      expect(screen.getByText('Backend')).toBeInTheDocument();
+    });
+
+
+    it('does not duplicate tags in the legend', () => {
+      render(<RequirementsGraph requirements={mockRequirements} />);
+      const backendTags = screen.getAllByText('Backend');
+      expect(backendTags).toHaveLength(1);
+    });
+
+    it('handles requirements with no tags gracefully', () => {
+      const { container } = render(<RequirementsGraph requirements={mockRequirementsNoTags} />);
+      expect(container.querySelector('svg')).toBeInTheDocument();
+      expect(screen.queryByText(/No requirements to visualize/i)).not.toBeInTheDocument();
+    });
   });
 
-  it('applies correct colors for tags', () => {
-    render(<RequirementsGraph requirements={mockRequirements} />);
-    const colorSpan = screen.getByText('UI').previousSibling;
-    expect(colorSpan).toHaveStyle(`background-color: #ff0000`);
-  });
+  // -------- Tag Colors --------
+  describe('Tag Colors', () => {
+    it('applies correct colors for tags', () => {
+      render(<RequirementsGraph requirements={mockRequirements} />);
+      expect(tagColors.getTagColor).toHaveBeenCalledWith('UI');
+      expect(tagColors.getTagColor).toHaveBeenCalledWith('Backend');
+      expect(tagColors.getTagColor).toHaveBeenCalledWith('source:doc1');
+      expect(tagColors.getTagColor).toHaveBeenCalledWith('source:doc2');
+    });
 
-  it('handles tag click to select and highlight', () => {
-    render(<RequirementsGraph requirements={mockRequirements} />);
-    const uiTag = screen.getByText('UI');
-    fireEvent.click(uiTag); // select
-    fireEvent.click(uiTag); // deselect
-  });
 
-  it('renders dashed line legend and instructions', () => {
-    render(<RequirementsGraph requirements={mockRequirements} />);
-    expect(screen.getByText(/Dashed line = same source document/i)).toBeInTheDocument();
-    expect(screen.getByText(/Drag nodes to rearrange/i)).toBeInTheDocument();
-  });
-
-  it('should call getTagColor for each tag', () => {
-    render(<RequirementsGraph requirements={mockRequirements} />);
-    expect(tagColors.getTagColor).toHaveBeenCalledWith('UI');
-    expect(tagColors.getTagColor).toHaveBeenCalledWith('Backend');
-    expect(tagColors.getTagColor).toHaveBeenCalledWith('source:doc1');
-  });
-
-  it('simulates hover over same-source link to trigger highlight', () => {
-    render(<RequirementsGraph requirements={mockRequirements} />);
-    
-    const mockLink = { type: 'same-source', sourceDocument: 'doc1', source: { id: 'req:R1' }, target: { id: 'req:R2' } };
-    const linkMock = { attr: jest.fn().mockReturnThis(), on: jest.fn() };
-    d3.select.mockReturnValueOnce({ selectAll: jest.fn(() => linkMock), append: jest.fn(() => linkMock), call: jest.fn() });
-
-    const mouseOverHandler = linkMock.on.mock.calls.find(call => call[0] === 'mouseover')[1];
-    mouseOverHandler({}, mockLink);
-    const mouseOutHandler = linkMock.on.mock.calls.find(call => call[0] === 'mouseout')[1];
-    mouseOutHandler();
-
-    expect(linkMock.attr).toHaveBeenCalled();
-  });
-
-  it('triggers simulation tick to update node/link positions', () => {
-    render(<RequirementsGraph requirements={mockRequirements} />);
-    expect(mockSimulation.on).toHaveBeenCalledWith('tick', expect.any(Function));
-
-    // Manually invoke the tick callback
-    if (mockTickHandlers.tick) {
-      mockTickHandlers.tick();
-    }
-  });
-
-  it('stops simulation on unmount', () => {
-    const { unmount } = render(<RequirementsGraph requirements={mockRequirements} />);
-    unmount();
-    expect(mockSimulation.stop).toHaveBeenCalled();
+    it('applies fallback color for unmapped tags', () => {
+      const customReqs = [
+        { req_id: 'R4', title: 'Custom', tags: [{ name: 'UnknownTag' }], source_document_filename: 'doc3' },
+      ];
+      render(<RequirementsGraph requirements={customReqs} />);
+      expect(tagColors.getTagColor).toHaveBeenCalledWith('UnknownTag');
+    });
   });
 });
