@@ -149,6 +149,26 @@ def sample_requirements():
 
 # --- Test Cases ---
 
+# --- Added mock JSON constants including stakeholders & requirement_type ---
+MOCK_REQUIREMENTS_DICT = {
+    "epics": [
+        {
+            "epic_name": "Authentication",
+            "user_stories": [
+                {
+                    "story": "As a user I want to log in",
+                    "acceptance_criteria": ["Valid credentials required", "Redirect on success"],
+                    "priority": "High",
+                    "suggested_tags": ["Security"],
+                    "requirement_type": "Functional",
+                    "stakeholders": ["End Users", "Security Team"]
+                }
+            ]
+        }
+    ]
+}
+MOCK_REQUIREMENTS_JSON = json.dumps(MOCK_REQUIREMENTS_DICT)
+
 class TestRagService:
 
     def test_get_vector_store(self, mock_langchain):
@@ -646,7 +666,7 @@ class TestRagService:
         assert "epics" in DEFAULT_REQUIREMENTS_QUERY.lower()
 
     def test_collection_name_constant(self):
-        """Test collection name constant is properly defined."""
+        """Test collection name constant is properly defined.""" 
         from app.rag_service import COLLECTION_NAME
         assert COLLECTION_NAME == "document_chunks"
 
@@ -975,3 +995,73 @@ class TestRagService:
         
         # Verify commit was called
         assert mock_conn.commit.called
+
+    # --- NEW tests for stakeholders & requirement_type ---
+
+    def test_generated_requirements_parses_stakeholders_and_requirement_type(self):
+        """Direct Pydantic parsing test for the new fields."""
+        data = MOCK_REQUIREMENTS_DICT
+        result = GeneratedRequirements.model_validate(data)
+        story = result.epics[0].user_stories[0]
+        assert story.requirement_type == "Functional"
+        assert story.stakeholders == ["End Users", "Security Team"]
+
+    def test_missing_stakeholders_causes_validation_error(self):
+        """If stakeholders are missing, validation should fail."""
+        invalid = {
+            "epics": [
+                {
+                    "epic_name": "Authentication",
+                    "user_stories": [
+                        {
+                            "story": "As a user I want login",
+                            "acceptance_criteria": ["Valid credentials"],
+                            "priority": "High",
+                            "suggested_tags": ["Security"],
+                            "requirement_type": "Functional"
+                            # stakeholders missing
+                        }
+                    ]
+                }
+            ]
+        }
+        with pytest.raises(Exception):
+            GeneratedRequirements.model_validate(invalid)
+
+    def test_requirement_type_optional(self):
+        """Requirement type may be omitted (should be None)."""
+        data = {
+            "epics": [
+                {
+                    "epic_name": "Notifications",
+                    "user_stories": [
+                        {
+                            "story": "As a user I want notifications",
+                            "acceptance_criteria": ["Send email"],
+                            "priority": "Low",
+                            "suggested_tags": ["UX"],
+                            "stakeholders": ["End Users"]
+                            # no requirement_type
+                        }
+                    ]
+                }
+            ]
+        }
+        result = GeneratedRequirements.model_validate(data)
+        assert result.epics[0].user_stories[0].requirement_type is None
+
+    def test_generate_document_requirements_passes_stakeholders_to_save(self, mock_langchain):
+        """Ensure the LLM output including stakeholders & requirement_type flows to save_requirements_to_db."""
+        mock_chain = mock_langchain['final_chain']
+        # LLM returns fenced JSON
+        mock_chain.invoke.return_value = f"```json\n{MOCK_REQUIREMENTS_JSON}\n```"
+        with patch('app.rag_service.save_requirements_to_db') as mock_save:
+            result = generate_document_requirements(document_id=1, owner_id="user_123")
+            mock_save.assert_called_once()
+            saved_arg = mock_save.call_args[0][0]  # Pydantic object passed to save
+            assert isinstance(saved_arg, GeneratedRequirements)
+            story = saved_arg.epics[0].user_stories[0]
+            assert story.requirement_type == "Functional"
+            assert story.stakeholders == ["End Users", "Security Team"]
+            assert result == 1
+
