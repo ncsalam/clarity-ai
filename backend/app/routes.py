@@ -39,6 +39,7 @@ from .schemas import (
 )
 from .validation_utils import rate_limiter
 from .contradiction_analysis_service import ContradictionAnalysisService 
+from .edge_case_service import EdgeCaseService
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'md', 'json'}
@@ -787,6 +788,49 @@ def update_current_user_profile():
         print(f"An error occurred while updating profile: {str(e)}")
         return jsonify({"error": f"Failed to update profile: {str(e)}"}), 500
 
+# --- Edge Case Generation Endpoint ---  # NEW
+
+@api_bp.route('/requirements/<int:requirement_id>/edge-cases', methods=['POST'])  # NEW
+@require_auth(["requirements:write"])  # NEW
+def generate_edge_cases(requirement_id):  # NEW
+    """
+    Generate edge test cases for a specific requirement.  # NEW
+    Returns a simple JSON payload with a list of edge case descriptions.  # NEW
+    """  # NEW
+    try:  # NEW
+        from flask import g  # NEW
+        current_user_id = g.user_id  # NEW
+
+        # Optional: reuse the same rate limiter style as ambiguity  # NEW
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):  # NEW
+            return jsonify({  # NEW
+                "error": "rate_limit_exceeded",  # NEW
+                "message": "Too many requests. Please try again later."  # NEW
+            }), 429  # NEW
+
+        # Allow an optional JSON body, e.g. { "max_cases": 8 }  # NEW
+        data = request.get_json(silent=True) or {}  # NEW
+        max_cases = data.get("max_cases", 10)  # NEW
+
+        service = EdgeCaseService()  # NEW
+        edge_cases = service.generate_for_requirement(  # NEW
+            requirement_id=requirement_id,  # NEW
+            owner_id=current_user_id,       # NEW
+            max_cases=max_cases,            # NEW
+        )  # NEW
+
+        return jsonify({  # NEW
+            "requirement_id": requirement_id,  # NEW
+            "edge_cases": edge_cases,          # NEW
+        }), 201  # NEW
+
+    except ValueError as e:  # NEW
+        # e.g. requirement not found or access denied  # NEW
+        return jsonify({"error": str(e)}), 404  # NEW
+    except Exception as e:  # NEW
+        print(f"Error generating edge cases: {str(e)}")  # NEW
+        return jsonify({"error": "Failed to generate edge cases"}), 500  # NEW
+
 
 # --- Ambiguity Detection Endpoints ---
 
@@ -802,7 +846,7 @@ def analyze_ambiguity():
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."
@@ -926,7 +970,7 @@ def analyze_requirement_ambiguity(requirement_id):
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."
@@ -1004,8 +1048,8 @@ def analyze_batch_ambiguity():
         from flask import g
         current_user_id = g.user_id
         
-        # Check rate limit (stricter for batch operations)
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=20, window_seconds=3600):
+        # Check rate limit
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many batch requests. Please try again later."
@@ -1089,7 +1133,7 @@ def submit_clarification():
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."
@@ -1621,7 +1665,7 @@ def add_lexicon_term():
         current_user_id = g.user_id
         
         # Check rate limit
-        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=1000, window_seconds=3600):
             return jsonify({
                 "error": "rate_limit_exceeded",
                 "message": "Too many requests. Please try again later."

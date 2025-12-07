@@ -38,6 +38,10 @@ const RequirementsDashboard = ({ refreshSignal, onTriggerRefresh }) => {
       setIsLoading(true);
       const response = await apiService.coreApi('/api/requirements'); 
       setRequirements(response);
+      // Reset batch analysis UI after data reload
+      setShowBatchResults(false);
+      setBatchResults(null);
+      setBatchProgress({ current: 0, total: 0 });
       setError(null);
     } catch (err) {
       console.error("Error fetching requirements:", err);
@@ -70,6 +74,13 @@ const RequirementsDashboard = ({ refreshSignal, onTriggerRefresh }) => {
     try {
         setIsGenerating(true);
         setError(null);
+      // Reset batch analysis UI to defaults
+      setShowBatchResults(false);
+      setBatchResults(null);
+      setBatchProgress({ current: 0, total: 0 });
+      // Revert sidebar contents to startup state (do not change open/close)
+      setContradictionReport(null);
+      setConflictingReqIds([]);
         await apiService.coreApi('/api/requirements/generate', { method: 'POST' });
         if (onTriggerRefresh) {
             onTriggerRefresh(); 
@@ -116,10 +127,11 @@ const RequirementsDashboard = ({ refreshSignal, onTriggerRefresh }) => {
         }
         const batch = requirementIds.slice(i, i + batchSize);
         try {
-          const batchAnalysisResults = await apiService.batchAnalyzeRequirements(batch); 
-          results.push(...batchAnalysisResults);
+          const batchAnalysisResults = await apiService.batchAnalyzeRequirements(batch);
+          const analyses = batchAnalysisResults.analyses;
+          results.push(...analyses);
           setBatchProgress({ current: Math.min(i + batchSize, requirementIds.length), total: requirementIds.length });
-          batchAnalysisResults.forEach(result => {
+          analyses.forEach(result => {
             totalTerms += result.total_terms_flagged || 0;
             totalResolved += result.terms_resolved || 0;
           });
@@ -385,19 +397,27 @@ const RequirementsDashboard = ({ refreshSignal, onTriggerRefresh }) => {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {requirements.map(req => (
-                        <div key={req.id} id={`req-card-${req.req_id}`}>
-                            <RequirementCard
-                                requirement={req}
-                                enableRealTimeAnalysis={enableRealTimeAnalysis}
-                                isConflicting={contradictionReport?.conflicts?.some(c => c.conflicting_requirement_ids.includes(req.req_id)) || false}
-                                isSelected={conflictingReqIds.includes(req.req_id)} 
-                                // --- 4. WIRE UP THE CORRECT HANDLERS ---
-                                onEdit={handleEditClick}
-                                onDelete={handleDeleteClick}
-                            />
-                        </div>
-                    ))}
+                  {requirements.map(req => {
+                    // Find batch analysis result for this requirement
+                    let batchAnalysis = null;
+                    if (showBatchResults && batchResults && batchResults.results) {
+                      batchAnalysis = batchResults.results.find(r => r.requirement_id === req.id);
+                    }
+                    return (
+                      <div key={req.id} id={`req-card-${req.req_id}`}>
+                        <RequirementCard
+                          requirement={req}
+                          enableRealTimeAnalysis={enableRealTimeAnalysis}
+                          isConflicting={contradictionReport?.conflicts?.some(c => c.conflicting_requirement_ids.includes(req.req_id)) || false}
+                          isSelected={conflictingReqIds.includes(req.req_id)}
+                          // --- Pass batch ambiguity results ---
+                          batchAnalysis={batchAnalysis}
+                          onEdit={handleEditClick}
+                          onDelete={handleDeleteClick}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
             )}
         </div>
