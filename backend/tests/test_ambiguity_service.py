@@ -139,6 +139,51 @@ class TestAmbiguityService:
         assert saved_term.is_ambiguous == True
         assert "LLM analysis not available" in saved_term.reasoning
 
+    def test_run_analysis_combines_lexicon_and_semantic(self, service, mock_components, mock_db_session):
+        """Ensure analysis includes both exact lexicon matches and semantic matches."""
+        detector = mock_components['detector']
+
+        # Lexicon detection finds an exact term
+        flagged_terms = [{
+            'term': 'fast',
+            'sentence_context': 'System must be fast to respond',
+            'position_start': 11,
+            'position_end': 15
+        }]
+        detector.analyze_text.return_value = {'flagged_terms': flagged_terms}
+        detector._segment_sentences.return_value = [("System must be fast to respond", 0, 32)]
+        detector._find_sentence_for_position.return_value = "System must be fast to respond"
+
+        # Mock semantic enhancement to return a similar term
+        semantic_terms = [{
+            'term': 'quick',
+            'position_start': 20,
+            'position_end': 25,
+            'is_exact_match': False,
+            'similarity_score': 0.9,
+            'matched_lexicon_term': 'fast',
+            'detection_method': 'semantic_similarity'
+        }]
+        service.semantic_enhancement_service = MagicMock()
+        service.semantic_enhancement_service.find_semantically_similar_terms.return_value = semantic_terms
+
+        # Disable LLM path to stay in lexicon-only mode
+        service.llm_available = False
+
+        # Capture save payload
+        with patch.object(service, '_save_analysis_to_db', return_value=AmbiguityAnalysis()) as mock_save:
+            service.run_analysis("System must be fast to respond quickly", owner_id="user_123", use_llm=False)
+
+        # Extract ambiguous_terms passed to persistence layer
+        saved_terms = mock_save.call_args.kwargs['ambiguous_terms']
+        terms_by_label = {t['term']: t for t in saved_terms}
+
+        assert 'fast' in terms_by_label, "Lexicon match should be included"
+        assert 'quick' in terms_by_label, "Semantic match should be included"
+
+        assert terms_by_label['fast']['detection_method'] == 'lexicon_exact'
+        assert terms_by_label['quick']['detection_method'] == 'semantic_similarity'
+
     @patch('app.ambiguity_service.Requirement.query') # Patch with app. prefix
     def test_run_requirement_analysis_access_denied(self, mock_req_query, service):
         """Test access denial on a specific requirement."""
