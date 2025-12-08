@@ -70,12 +70,21 @@ cp .env.example .env
 # This isn't necessary right away to get the app to start.
 
 # Start all services (backend, frontend, database, SuperTokens)
-docker compose up
+docker-compose up postgresql supertokens backend
 
 ```
-Finally, you'll have to initialize the database. In a separate terminal, run:
+Next, you'll have to initialize the database. In a separate terminal, run:
 ```bash
 docker compose exec backend flask db upgrade
+```
+
+Finally, open up a third terminal and run the frontend:
+```bash
+# Navigate to frontend folder.
+cd frontend
+
+# Run
+npm run dev
 ```
 
 The application will be available at:
