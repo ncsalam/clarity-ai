@@ -21,11 +21,11 @@ docker compose up postgresql supertokens
 
 ### 3. Set Up the Python Environment
 
-1.  `cd backend`
-
-2.  `conda create --name clarity-backend python=3.11`
-
-3.  `conda activate clarity-backend`
+```bash
+cd backend
+conda create --name clarity-backend python=3.11
+conda activate clarity-backend
+```
 
 
 ### 4\. Configure Environment Variables
@@ -48,16 +48,26 @@ docker compose up postgresql supertokens
 
 ### 5\. Install Dependencies & Run Database Migrations
 
-1.  `python -m pip install -r requirements.txt`
+```bash
+python -m pip install -r requirements.txt
+# Set the FLASK_APP environment variable for the current session
+export FLASK_APP=wsgi.py
+# Initialize the database migration scripts
+python -m flask db init
 
-2. Set the FLASK\_APP environment variable for the current session
-   `export FLASK_APP=wsgi.py`
-3.  Initialize the database migration scripts `python -m flask db init`
-
-4.  `python -m flask db upgrade`
+python -m flask db upgrade
+```
 
 
 ### 6\. Run Tests and Start the Server
+
+```bash
+python -m pytest
+# You should see all tests pass!
+
+python wsgi.py
+# Your Flask server is now running on http://127.0.0.1:5000.
+```
 
 1.  `python -m pytest`
 2.  You should see all tests pass!
