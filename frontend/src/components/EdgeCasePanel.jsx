@@ -189,7 +189,7 @@ const EdgeCasePanel = ({ requirement }) => {
                 <span>Generating...</span>
               </>
             ) : (
-              "Regenerate"
+              "Generate/Regenerate"
             )}
           </button>
 

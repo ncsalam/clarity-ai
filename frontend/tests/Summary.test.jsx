@@ -1,6 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import AutomatedSummary from '../src/components/Summary';
-import StructuredSummary from '../src/components/Summary';
+import AutomatedSummary, { StructuredSummary } from '../src/components/Summary';
 import apiService from '../src/lib/api-service.js';
 import { describe, test, vi, beforeEach, expect } from 'vitest';
 
