@@ -8,7 +8,6 @@ const RequirementsGraph = ({ requirements }) => {
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
   const [allTags, setAllTags] = useState([]);
-  const [tagColorMap, setTagColorMap] = useState(new Map());
 
   useEffect(() => {
     if (!requirements || requirements.length === 0) return;
@@ -56,7 +55,6 @@ const RequirementsGraph = ({ requirements }) => {
 
     const sharedTagColorMap = new Map();
     allTagsList.forEach(tagName => sharedTagColorMap.set(tagName, getTagColor(tagName)));
-    setTagColorMap(sharedTagColorMap);
 
     // Tag nodes and links
     requirements.forEach(req => {

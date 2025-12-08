@@ -51,7 +51,7 @@ const AuthGuard = ({
     };
 
     validateAuth();
-  }, [loading, isAuthenticated, requireAuth]); // Remove validateAndRefreshSession dependency to prevent immediate validation
+  }, [loading, isAuthenticated, requireAuth, validateAndRefreshSession]);
 
   // Permission and role validation for authenticated users
   useEffect(() => {

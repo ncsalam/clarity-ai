@@ -80,9 +80,9 @@ const AmbiguityDetectionPanel = ({
       updatedAnalysis.terms_resolved = (updatedAnalysis.terms_resolved || 0) + 1;
       
       // Update term status
-      const termIndex = updatedAnalysis.terms.findIndex(t => t.id === selectedTerm.id);
+      const termIndex = updatedAnalysis.ambiguous_terms.findIndex(t => t.id === selectedTerm.id);
       if (termIndex !== -1) {
-        updatedAnalysis.terms[termIndex].status = 'clarified';
+        updatedAnalysis.ambiguous_terms[termIndex].status = 'clarified';
       }
       
       setAnalysis(updatedAnalysis);
@@ -101,7 +101,7 @@ const AmbiguityDetectionPanel = ({
     setSelectedTerm(null);
   };
 
-  const pendingTerms = analysis?.terms?.filter(t => t.status === 'pending') || [];
+  const pendingTerms = analysis?.ambiguous_terms?.filter(t => t.status === 'pending') || [];
   const resolvedCount = analysis?.terms_resolved || 0;
   const totalTerms = analysis?.total_terms_flagged || 0;
 
@@ -189,7 +189,7 @@ const AmbiguityDetectionPanel = ({
             <div className="space-y-3">
               <AmbiguityHighlighter
                 text={analysis.original_text}
-                ambiguousTerms={analysis.terms || []}
+                ambiguousTerms={analysis.ambiguous_terms || []}
                 onTermClick={handleTermClick}
               />
 

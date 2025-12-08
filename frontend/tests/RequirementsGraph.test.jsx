@@ -1,9 +1,9 @@
 // tests/RequirementsGraph.test.jsx
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import RequirementsGraph from '../src/components/RequirementsGraph';
 import * as tagColors from '../src/util/tagColors';
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // -------------------------
 // Mock getTagColor

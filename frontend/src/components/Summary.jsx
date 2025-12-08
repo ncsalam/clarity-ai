@@ -144,3 +144,4 @@ const AutomatedSummary = ({ refreshSignal }) => {
 };
 
 export default AutomatedSummary;
+export { StructuredSummary };

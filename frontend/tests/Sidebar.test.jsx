@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Sidebar from '../src/components/Sidebar';
 import * as AuthContext from '../src/lib/auth-context.jsx';
+import { describe, beforeEach, test, vi, expect } from 'vitest';
 
 const mockUser = {
   email: 'test@example.com',

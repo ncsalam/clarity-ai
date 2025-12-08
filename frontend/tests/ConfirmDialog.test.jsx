@@ -6,7 +6,7 @@ import { describe, it, beforeEach, vi, expect } from 'vitest';
 
 // Mock LoadingSpinner for Vitest
 vi.mock('../src/components/LoadingSpinner', () => ({
-  default: ({ size, color }) => <div data-testid="spinner" />
+  default: () => <div data-testid="spinner" />
 }));
 
 describe('ConfirmDialog', () => {
