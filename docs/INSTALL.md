@@ -66,15 +66,8 @@ python -m pytest
 # You should see all tests pass!
 
 python wsgi.py
-# Your Flask server is now running on http://127.0.0.1:5000.
+# Your Flask server is now running on http://localhost:5000.
 ```
-
-1.  `python -m pytest`
-2.  You should see all tests pass!
-
-3.  `python wsgi.py`
-4.  Your Flask server is now running on http://127.0.0.1:5000.
-
 
 ## Frontend Setup
 --------------
