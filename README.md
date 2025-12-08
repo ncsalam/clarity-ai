@@ -70,21 +70,14 @@ cp .env.example .env
 # This isn't necessary right away to get the app to start.
 
 # Start all services (backend, frontend, database, SuperTokens)
-docker-compose up postgresql supertokens backend
+docker-compose up
 
 ```
+
 Next, you'll have to initialize the database. In a separate terminal, run:
+
 ```bash
 docker compose exec backend flask db upgrade
-```
-
-Finally, open up a third terminal and run the frontend:
-```bash
-# Navigate to frontend folder.
-cd frontend
-
-# Run
-npm run dev
 ```
 
 The application will be available at:
@@ -96,7 +89,8 @@ The application will be available at:
 
 # Manual Setup
 
-**NOTE:** manual setup instructions have not been updated and may not be functional.
+**NOTE:** This is the preferred method for development, as it allows you to easily create database migrations
+and run tests.
 
 Refer [INSTALL.md](docs/INSTALL.md) for details.
 
@@ -119,12 +113,28 @@ Refer [INSTALL.md](docs/INSTALL.md) for details.
 # Development Processes
 
 ## Running Tests
+
+note that these instructions only apply to the local install (see manual setup above).
+
+### Backend
+
 ```bash
 cd backend
+conda activate clarity-backend # or other command to activate virtual environment. Ignore this if your dependencies are installed locally.
 python -m pytest
 ```
 
+### Frontend
+
+```bash
+cd frontend
+npm run test
+```
+
 ## Database Migrations
+
+note that these instructions only apply when running the backend locally.
+
 ```bash
 # Create a new migration
 flask db migrate -m "Description of changes"
@@ -144,6 +154,8 @@ flask db downgrade
 - `frontend/src/lib/supertokens-config.js`: SuperTokens frontend configuration
 
 # Continuous Integration (CI)
+
+**Note** CI pipeline is not working correctly at the moment. Take these instructions with a grain of salt.
 
 This project uses **GitHub Actions** for automated testing and code quality checks. The CI pipeline runs automatically on every push and pull request to ensure code quality and catch issues early.
 
