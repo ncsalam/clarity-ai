@@ -39,6 +39,7 @@ from .schemas import (
 )
 from .validation_utils import rate_limiter
 from .contradiction_analysis_service import ContradictionAnalysisService 
+from .edge_case_service import EdgeCaseService
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'md', 'json'}
@@ -434,6 +435,8 @@ def get_requirements():
                 "description": req.description,
                 "status": req.status,
                 "priority": req.priority,
+                "requirement_type": req.requirement_type,
+                "stakeholders": req.stakeholders,
                 "source_document_filename": req.source_document.filename if req.source_document else None,
                 "tags": [{"id": tag.id, "name": tag.name} for tag in req.tags]
             })
@@ -786,6 +789,49 @@ def update_current_user_profile():
         db.session.rollback()
         print(f"An error occurred while updating profile: {str(e)}")
         return jsonify({"error": f"Failed to update profile: {str(e)}"}), 500
+
+# --- Edge Case Generation Endpoint ---  # NEW
+
+@api_bp.route('/requirements/<int:requirement_id>/edge-cases', methods=['POST'])  # NEW
+@require_auth(["requirements:write"])  # NEW
+def generate_edge_cases(requirement_id):  # NEW
+    """
+    Generate edge test cases for a specific requirement.  # NEW
+    Returns a simple JSON payload with a list of edge case descriptions.  # NEW
+    """  # NEW
+    try:  # NEW
+        from flask import g  # NEW
+        current_user_id = g.user_id  # NEW
+
+        # Optional: reuse the same rate limiter style as ambiguity  # NEW
+        if not rate_limiter.check_rate_limit(current_user_id, max_requests=100, window_seconds=3600):  # NEW
+            return jsonify({  # NEW
+                "error": "rate_limit_exceeded",  # NEW
+                "message": "Too many requests. Please try again later."  # NEW
+            }), 429  # NEW
+
+        # Allow an optional JSON body, e.g. { "max_cases": 8 }  # NEW
+        data = request.get_json(silent=True) or {}  # NEW
+        max_cases = data.get("max_cases", 10)  # NEW
+
+        service = EdgeCaseService()  # NEW
+        edge_cases = service.generate_for_requirement(  # NEW
+            requirement_id=requirement_id,  # NEW
+            owner_id=current_user_id,       # NEW
+            max_cases=max_cases,            # NEW
+        )  # NEW
+
+        return jsonify({  # NEW
+            "requirement_id": requirement_id,  # NEW
+            "edge_cases": edge_cases,          # NEW
+        }), 201  # NEW
+
+    except ValueError as e:  # NEW
+        # e.g. requirement not found or access denied  # NEW
+        return jsonify({"error": str(e)}), 404  # NEW
+    except Exception as e:  # NEW
+        print(f"Error generating edge cases: {str(e)}")  # NEW
+        return jsonify({"error": "Failed to generate edge cases"}), 500  # NEW
 
 
 # --- Ambiguity Detection Endpoints ---
@@ -1170,7 +1216,9 @@ def submit_clarification():
                 "title": requirement.title,
                 "description": requirement.description,
                 "status": requirement.status,
-                "priority": requirement.priority
+                "priority": requirement.priority,
+                "stakeholders": requirement.stakeholders,
+                "requirement_type": requirement.requirement_type
             }
         
         # Create clarification history record
@@ -2035,6 +2083,8 @@ def get_document_requirements(document_id):
                 "description": req.description,
                 "status": req.status,
                 "priority": req.priority,
+                "stakeholders": req.stakeholders,
+                "requirement_type": req.requirment_type,
                 "source_document_filename": document.filename, # We already have the doc
                 "tags": [{"id": tag.id, "name": tag.name} for tag in req.tags]
             }
@@ -2076,6 +2126,8 @@ def update_requirement(requirement_id):
         requirement.description = data.get('description', requirement.description)
         requirement.status = data.get('status', requirement.status)
         requirement.priority = data.get('priority', requirement.priority)
+        requirement.stakeholders = data.get('stakeholders', requirement.stakeholders)
+        requirement.requirement_type = data.get('requirement_type', requirement.requirement_type)
         
         # Note: Updating tags is more complex (many-to-many)
         # We'll skip it for this basic update.
@@ -2090,6 +2142,8 @@ def update_requirement(requirement_id):
             "description": requirement.description,
             "status": requirement.status,
             "priority": requirement.priority,
+            "stakeholders": requirement.stakeholders,
+            "requirement_type": requirement.requirement_type,
             "source_document_filename": requirement.source_document.filename if requirement.source_document else None,
             "tags": [{"id": tag.id, "name": tag.name} for tag in requirement.tags]
         }
