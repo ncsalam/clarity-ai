@@ -11,7 +11,7 @@ TL;DR  - This is what we wished we had when we made it, so we made it for everyo
 
 ## Demo Video
 
-[![Watch the video!](https://img.youtube.com/vi/_zeJ2iY12UA/0.jpg)](https://youtu.be/_zeJ2iY12UA)
+[![Watch the video!](https://img.youtube.com/vi/_zeJ2iY12UA/0.jpg)](https://ncsu.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=7d57c058-4225-40cd-80fb-b3ad0021f34e)
 
 ## 🚀 Tech Stack
 
